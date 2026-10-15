@@ -11,11 +11,33 @@
   const fmtT = t => new Date(t).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 
   /* ---------- storage ---------- */
-  const KEY = 'hh-prototype-v1';
+  const CFG = window.HH_CONFIG || {};
+  const API = !!CFG.API_URL;                 // true once the Apps Script URL is set in js/config.js
+  const DEFAULT_PW = 'NK@12345';
+  const KEY = 'hh-prototype-v1', TOKEN_KEY = 'hh-token';
   const clone = o => JSON.parse(JSON.stringify(o));
-  function load() { try { const x = localStorage.getItem(KEY); if (x) return JSON.parse(x); } catch (e) { } return clone(window.SEED); }
+  const emptyDB = () => ({ colleges: [], homes: [], activities: [], followups: [], mous: [], reviews: [], resources: [], users: [], logs: [], settings: { monthlyTarget: 4 } });
+  function load() { if (API) return emptyDB(); try { const x = localStorage.getItem(KEY); if (x) return JSON.parse(x); } catch (e) { } return clone(window.SEED); }
   let DB = load();
-  function save() { try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch (e) { } }
+  function save() { if (API) return; try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch (e) { } }
+
+  /* ---------- API (Google Apps Script) ---------- */
+  async function api(action, payload) {
+    const res = await fetch(CFG.API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(Object.assign({ action, token: S.token }, payload || {})) });
+    const j = await res.json();
+    if (!j.ok) {
+      if (j.error === 'AUTH') { S.user = null; S.token = ''; try { sessionStorage.removeItem(TOKEN_KEY); } catch (e) { } render(); throw new Error('Session expired — please sign in again'); }
+      throw new Error(j.error || 'Request failed');
+    }
+    return j;
+  }
+  async function refresh() { const j = await api('bootstrap'); DB = j.data; S.user = j.user; }
+  // Saves one row to the sheet. Returns false (after reloading) if the server refused it.
+  async function sync(table, row, isNew) {
+    if (!API) return true;
+    try { const j = await api('save', { table, row, isNew: !!isNew }); Object.assign(row, j.row); return true; }
+    catch (e) { toast(e.message); try { await refresh(); } catch (_) { } render(); return false; }
+  }
   const nextId = (arr, p) => p + (arr.reduce((m, x) => Math.max(m, parseInt(String(x.id).slice(p.length)) || 0), 0) + 1);
 
   /* ---------- roles ---------- */
@@ -46,10 +68,14 @@
   };
   const svg = (d, cls) => `<svg viewBox="0 0 24 24" ${cls ? `class="${cls}"` : ''}><path d="${d}"/></svg>`;
 
+  // The DCIP logo is optional: drop assets/dcip-logo.png into the repo and it appears everywhere.
+  const LOGO_DCIP = '<img src="assets/dcip-logo.png" alt="DCIP Kozhikode" onerror="this.remove()">';
+
   /* ---------- state ---------- */
-  const S = { user: null, route: 'dashboard', cal: new Date(new Date().getFullYear(), new Date().getMonth(), 1), f: { q: '', college: '', status: '', wf: '' }, logQ: '', menu: false };
+  const S = { user: null, token: '', route: 'dashboard', cal: new Date(new Date().getFullYear(), new Date().getMonth(), 1), f: { q: '', college: '', status: '', wf: '' }, logQ: '', menu: false };
 
   function log(action, detail) {
+    if (API) return;                          // the server writes the audit log itself
     DB.logs.unshift({ t: new Date().toISOString(), user: S.user ? S.user.name : 'System', role: S.user ? S.user.role : '', action, detail: detail || '' });
     save();
   }
@@ -111,8 +137,8 @@
         <div class="brand"><img class="logo-img" src="assets/happy-hill-logo.png" alt="Happy Hill"></div>
         <nav class="nav">${items}</nav>
         <div class="side-foot">
-          <img class="logo-img" src="assets/district-logo.png" alt="District Administration Kozhikode">
-          <span class="small muted">Nammude Kozhikode Initiative</span>
+          <div class="side-logos">${LOGO_DCIP}<img src="assets/district-logo.png" alt="District Administration Kozhikode"></div>
+          <span class="small muted">Nammude Kozhikode Initiative<br>DCIP · District Collector’s Internship Programme</span>
         </div>
       </aside>
       <main class="main">
@@ -120,6 +146,7 @@
           <button class="btn menu-btn" data-act="menu" aria-label="Menu">${svg('M4 6h16M4 12h16M4 18h16')}</button>
           <div class="grow"><h1>${NAV[S.route][0]}</h1><div class="muted small">${esc(who)}</div></div>
           <div class="user-chip"><div class="avatar">${esc(S.user.name.split(' ').map(w => w[0]).slice(0, 2).join(''))}</div><div><b>${esc(S.user.name)}</b><span>${r.label}</span></div></div>
+          <button class="btn" data-act="changePw">Password</button>
           <button class="btn" data-act="logout">Sign out</button>
         </div>
         <div id="view">${view()}</div>
@@ -129,14 +156,17 @@
   function view() {
     return ({ dashboard, colleges: collegesV, homes: homesV, activities: activitiesV, calendar: calendarV, followups: followupsV, mous: mousV, documents: documentsV, reports: reportsV, users: usersV, logs: logsV })[S.route]();
   }
-  function go(r) { if (!ROLES[S.user.role].nav.includes(r)) r = 'dashboard'; S.route = r; S.menu = false; render(); window.scrollTo(0, 0); }
+  function go(r) {
+    if (!ROLES[S.user.role].nav.includes(r)) r = 'dashboard'; S.route = r; S.menu = false; render(); window.scrollTo(0, 0);
+    if (API && (r === 'logs' || r === 'users' || r === 'dashboard')) refresh().then(render).catch(() => { });   // pick up other people's changes
+  }
 
   /* ---------- login ---------- */
   function loginView() {
-    const demo = [['u1', 'Super Admin', 'Everything, including the audit log'], ['u2', 'Admin / Intern', 'Manage data, verify, users'], ['u3', 'District Administration', 'All options, all colleges'], ['u4', 'College Coordinator', 'Own college and home only'], ['u6', 'Welfare Home', 'Own home, confirm activities']];
+    const demo = [['superadmin@example.org', 'Super Admin', 'superadmin@example.org'], ['admin@example.org', 'Admin / Intern', 'admin@example.org'], ['district@example.org', 'District Administration', 'district@example.org'], ['coordinator1@example.org', 'College Coordinator', 'coordinator1@example.org'], ['home1@example.org', 'Welfare Home', 'home1@example.org']];
     return `<div class="login">
       <section class="login-art">
-        <div class="badge"><img src="assets/district-logo.png" alt=""><span>District Administration<br>Kozhikode</span></div>
+        <div class="badges"><div class="badge"><img src="assets/district-logo.png" alt=""><span>District Administration<br>Kozhikode</span></div>${LOGO_DCIP ? `<div class="badge">${LOGO_DCIP}<span>District Collector’s<br>Internship Programme</span></div>` : ''}</div>
         <div><h1>Tracking every step of the Happy Hill journey.</h1><p>One shared place for partner colleges, welfare homes and the District Administration to plan activities, follow up and report progress.</p></div>
         <div class="small" style="opacity:.8;position:relative;z-index:1">Nammude Kozhikode Initiative · DCIP internship programme</div>
       </section>
@@ -151,10 +181,9 @@
           <div style="height:14px"></div>
           <button class="btn primary" style="width:100%;justify-content:center;padding:10px">Sign in</button>
         </form>
-        <div class="muted small" style="margin-top:22px">Prototype preview — pick a role to explore:</div>
-        <div class="role-grid">${demo.map(d => `<button class="role-card" data-act="loginAs" data-u="${d[0].toUpperCase()}"><b>${d[1]}</b><span>${d[2]}</span></button>`).join('')}</div>
-        <div class="note">Sample data only. Real sign-in and the Google Sheets connection come in the next phase.</div>
-        <a class="small" style="margin-top:12px;cursor:pointer" data-act="reset">Reset sample data</a>
+        ${CFG.SHOW_SAMPLE_ACCOUNTS === false ? '' : `<div class="sample-title"><b>Sample accounts</b><span class="small muted">Tap to fill · password <b>${DEFAULT_PW}</b></span></div>
+        <div class="role-grid">${demo.map(d => `<button type="button" class="role-card" data-act="fill" data-email="${d[0]}"><b>${d[1]}</b><span>${d[2]}</span></button>`).join('')}</div>`}
+        ${API ? '' : `<div class="note">Preview mode with sample data. The Google Sheets connection is not switched on yet.</div><a class="small" style="margin-top:12px;cursor:pointer" data-act="reset">Reset sample data</a>`}
       </section></div>`;
   }
 
@@ -173,7 +202,11 @@
     const recent = acts.slice().sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 5);
     const verifyQ = acts.filter(a => a.wf === 'Submitted');
     const mouAlerts = DB.mous.filter(m => mouStatus(m) !== 'Active' && (isStaff() || m.collegeId === S.user.collegeId || m.homeId === S.user.homeId));
-    return `<div class="grid g-kpi">
+    const hr = new Date().getHours(), greet = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
+    const hero = `<section class="hero"><div><h2>${greet}, ${esc(S.user.name.split(' ')[0])}</h2>
+      <p>${c.Delayed ? `${c.Delayed} activit${c.Delayed > 1 ? 'ies are' : 'y is'} running late.` : 'Everything is on track.'} ${verifyQ.length && isStaff() ? `${verifyQ.length} waiting for verification.` : `${monthDone} of ${target} activities completed this month.`}</p></div>
+      ${canAddAct() ? `<button class="btn" data-act="newAct">${svg('M12 5v14M5 12h14')}New activity</button>` : `<button class="btn" data-act="nav" data-r="activities">View activities</button>`}</section>`;
+    return `${hero}<div class="grid g-kpi">
       ${isStaff() ? kpi(DB.colleges.length, 'Partner colleges', 't-green', NAV.colleges[1]) + kpi(DB.homes.length, 'Welfare homes', 't-brown', NAV.homes[1]) : ''}
       ${kpi(c.total, 'Activities planned', 't-blue', NAV.activities[1])}
       ${kpi(c.Completed, 'Completed', 't-green', 'M5 13l4 4L19 7')}
@@ -375,7 +408,7 @@
   function usersV() {
     return `<div class="toolbar"><button class="btn primary" data-act="addUser">${svg('M12 5v14M5 12h14')}Add user</button></div>
     <div class="card"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Linked to</th><th>Status</th><th></th></tr></thead><tbody>
-    ${DB.users.map(u => `<tr><td><b>${esc(u.name)}</b></td><td>${esc(u.email)}</td><td>${ROLES[u.role].label}</td><td>${u.collegeId ? esc(college(u.collegeId).name) : u.homeId ? esc(home(u.homeId).name) : '—'}</td><td>${chip(u.active ? 'Active' : 'Expired').replace('Expired', 'Disabled')}</td><td>${u.role === 'superadmin' && S.user.role !== 'superadmin' ? '' : `<button class="btn sm" data-act="toggleUser" data-id="${u.id}">${u.active ? 'Disable' : 'Enable'}</button>`}</td></tr>`).join('')}</tbody></table></div></div>`;
+    ${DB.users.map(u => `<tr><td><b>${esc(u.name)}</b></td><td>${esc(u.email)}</td><td>${ROLES[u.role].label}</td><td>${u.collegeId ? esc(college(u.collegeId).name) : u.homeId ? esc(home(u.homeId).name) : '—'}</td><td>${chip(u.active ? 'Active' : 'Expired').replace('Expired', 'Disabled')}</td><td>${u.role === 'superadmin' && S.user.role !== 'superadmin' ? '' : `<button class="btn sm" data-act="toggleUser" data-id="${u.id}">${u.active ? 'Disable' : 'Enable'}</button> <button class="btn sm" data-act="resetPw" data-id="${u.id}">Reset password</button>`}</td></tr>`).join('')}</tbody></table></div></div>`;
   }
   function userModal() {
     const roles = Object.keys(ROLES).filter(r => r !== 'superadmin' || S.user.role === 'superadmin' && false);
@@ -399,15 +432,33 @@
 
   /* ---------- actions ---------- */
   function stamp(a, text) { a.updatedAt = today(); a.updatedBy = S.user.name; a.history.push({ t: new Date().toISOString(), by: S.user.name, text }); }
-  function setWf(id, to) {
+  async function setWf(id, to) {
     const a = actById(id); a.wf = to; stamp(a, to === 'Submitted' ? 'Submitted for verification' : to === 'Verified' ? 'Verified' : 'Returned for correction');
-    log(to === 'Submitted' ? 'Submitted activity' : to === 'Verified' ? 'Verified activity' : 'Returned activity', a.id + ' ' + a.title); save(); closeModal(); render(); toast('Activity ' + to.toLowerCase());
+    log(to === 'Submitted' ? 'Submitted activity' : to === 'Verified' ? 'Verified activity' : 'Returned activity', a.id + ' ' + a.title); save();
+    if (!await sync('activities', a)) return;
+    closeModal(); render(); toast('Activity ' + to.toLowerCase());
+  }
+  function changePwModal(forced) {
+    openModal(forced ? 'Set a new password' : 'Change password', `${forced ? '<p class="muted" style="margin-top:0">For security, please replace the default password before you continue.</p>' : ''}<form data-form="pw"><div class="form">
+      <div class="full"><label>Current password</label><input name="old" type="password" required autocomplete="current-password"></div>
+      <div class="full"><label>New password (at least 8 characters)</label><input name="nw" type="password" required minlength="8" autocomplete="new-password"></div>
+      </div><div class="modal-foot">${forced ? '' : '<button type="button" class="btn" data-act="close">Cancel</button>'}<button class="btn primary">Update password</button></div></form>`);
   }
   const A = {
     nav: d => go(d.r),
     menu: () => { S.menu = !S.menu; render(); },
-    logout: () => { log('Signed out'); S.user = null; render(); },
-    loginAs: d => { S.user = DB.users.find(u => u.id === d.u); S.route = 'dashboard'; log('Signed in'); render(); },
+    logout: () => {
+      log('Signed out');
+      if (API) { api('logout').catch(() => { }); DB = emptyDB(); try { sessionStorage.removeItem(TOKEN_KEY); } catch (e) { } S.token = ''; }
+      S.user = null; S.route = 'dashboard'; render();
+    },
+    fill: d => { const f = document.querySelector('form[data-form=login]'); f.email.value = d.email; f.pw.value = DEFAULT_PW; f.pw.focus(); },
+    changePw: () => changePwModal(false),
+    resetPw: async d => {
+      if (!API) return toast('Password reset works once the Google Sheets connection is on');
+      if (!confirm('Reset this user’s password to the default?')) return;
+      try { await api('resetPassword', { userId: d.id }); toast('Password reset to the default'); } catch (e) { toast(e.message); }
+    },
     reset: () => { DB = clone(window.SEED); save(); toast('Sample data reset'); },
     close: () => closeModal(),
     overlay: (d, el, e) => { if (e.target === el) closeModal(); },
@@ -415,9 +466,9 @@
     newAct: () => actForm(),
     editAct: d => actForm(d.id),
     wf: d => setWf(d.id, d.to),
-    homeConfirm: d => { const a = actById(d.id); a.homeConfirmed = true; stamp(a, 'Confirmed as held by welfare home'); log('Home confirmed activity', a.id + ' ' + a.title); save(); closeModal(); render(); toast('Thank you — confirmed'); },
+    homeConfirm: async d => { const a = actById(d.id); a.homeConfirmed = true; stamp(a, 'Confirmed as held by welfare home'); log('Home confirmed activity', a.id + ' ' + a.title); save(); if (!await sync('activities', a)) return; closeModal(); render(); toast('Thank you — confirmed'); },
     addFollow: d => followModal(d.id),
-    doneFollow: d => { const f = DB.followups.find(x => x.id === d.id); f.done = true; log('Closed follow-up', f.id); save(); render(); },
+    doneFollow: async d => { const f = DB.followups.find(x => x.id === d.id); f.done = true; log('Closed follow-up', f.id); save(); if (!await sync('followups', f)) return; render(); },
     calPrev: () => { S.cal = new Date(S.cal.getFullYear(), S.cal.getMonth() - 1, 1); render(); },
     calNext: () => { S.cal = new Date(S.cal.getFullYear(), S.cal.getMonth() + 1, 1); render(); },
     calToday: () => { const n = new Date(); S.cal = new Date(n.getFullYear(), n.getMonth(), 1); render(); },
@@ -427,7 +478,7 @@
     addReview: () => reviewModal(),
     editReview: d => reviewModal(d.id),
     addUser: () => userModal(),
-    toggleUser: d => { const u = DB.users.find(x => x.id === d.id); u.active = !u.active; log(u.active ? 'Enabled user' : 'Disabled user', u.name); save(); render(); },
+    toggleUser: async d => { const u = DB.users.find(x => x.id === d.id); u.active = !u.active; log(u.active ? 'Enabled user' : 'Disabled user', u.name); save(); if (!await sync('users', u)) return; render(); },
     exportActs: () => { const rows = [['ID', 'Title', 'College', 'Welfare home', 'Planned', 'Actual', 'Status', 'Review state', 'Coordinator', 'Outcome', 'Evidence', 'Challenges', 'Next action']]; filtered().forEach(a => rows.push([a.id, a.title, college(a.collegeId).name, home(a.homeId).name, a.planned, a.actual, derived(a), a.wf, a.coordinator, a.outcome, a.evidence, a.challenges, a.nextAction])); download('happy-hill-activities.csv', rows); log('Exported activities', rows.length - 1 + ' rows'); },
     exportLogs: () => { const rows = [['When', 'User', 'Role', 'Action', 'Detail']]; DB.logs.forEach(l => rows.push([l.t, l.user, l.role, l.action, l.detail])); download('happy-hill-audit-log.csv', rows); },
     print: () => window.print()
@@ -443,13 +494,29 @@
   document.addEventListener('input', onFilter); document.addEventListener('change', onFilter);
 
   /* forms */
-  document.addEventListener('submit', e => {
+  document.addEventListener('submit', async e => {
     const form = e.target, kind = form.dataset.form; if (!kind) return; e.preventDefault();
     const fd = Object.fromEntries(new FormData(form)); const mode = e.submitter && e.submitter.value;
+    const done = msg => { closeModal(); render(); toast(msg); };
     if (kind === 'login') {
-      const u = DB.users.find(x => x.email.toLowerCase() === (fd.email || '').trim().toLowerCase() && x.active);
-      if (!u) return toast('No active account with that email');
+      const email = (fd.email || '').trim().toLowerCase();
+      if (API) {
+        try {
+          const j = await api('login', { email, password: fd.pw || '' });
+          S.token = j.token; try { sessionStorage.setItem(TOKEN_KEY, j.token); } catch (x) { }
+          await refresh(); S.route = 'dashboard'; render();
+          if (j.mustChange) changePwModal(true);
+        } catch (err) { toast(err.message); }
+        return;
+      }
+      const u = DB.users.find(x => x.email.toLowerCase() === email && x.active);
+      if (!u || fd.pw !== DEFAULT_PW) return toast('Incorrect email or password');
       S.user = u; S.route = 'dashboard'; log('Signed in'); return render();
+    }
+    if (kind === 'pw') {
+      if (!API) return toast('Password changes work once the Google Sheets connection is on');
+      try { await api('changePassword', { oldPassword: fd.old, newPassword: fd.nw }); closeModal(); toast('Password updated'); } catch (err) { toast(err.message); }
+      return;
     }
     if (kind === 'act') {
       const id = form.dataset.id, c = DB.colleges.find(x => x.id === fd.collegeId); if (!c) return toast('Choose a college');
@@ -459,38 +526,47 @@
       if (id) stamp(a, 'Edited'); else { a.updatedAt = today(); a.updatedBy = S.user.name; DB.activities.push(a); }
       if (mode === 'submit') { a.wf = 'Submitted'; stamp(a, 'Submitted for verification'); }
       if (mode === 'verify') { a.wf = 'Verified'; stamp(a, 'Verified'); }
-      if (id && a.wf === 'Returned' && mode === 'save') a.wf = 'Returned';
       log((id ? 'Edited' : 'Created') + ' activity' + (mode === 'submit' ? ' and submitted' : mode === 'verify' ? ' and verified' : ''), a.id + ' ' + a.title);
-      save(); closeModal(); render(); return toast('Activity saved');
+      save(); if (!await sync('activities', a, !id)) return; return done('Activity saved');
     }
     if (kind === 'follow') {
-      const a = actById(form.dataset.id); DB.followups.push({ id: nextId(DB.followups, 'F'), activityId: a.id, reason: fd.reason, action: fd.action, owner: fd.owner, due: fd.due, done: false });
-      a.followUp = true; stamp(a, 'Follow-up added'); log('Added follow-up', a.id + ' ' + a.title); save(); closeModal(); render(); return toast('Follow-up saved');
+      const a = actById(form.dataset.id), f = { id: nextId(DB.followups, 'F'), activityId: a.id, reason: fd.reason, action: fd.action, owner: fd.owner, due: fd.due, done: false };
+      DB.followups.push(f); a.followUp = true; stamp(a, 'Follow-up added'); log('Added follow-up', a.id + ' ' + a.title); save();
+      if (!await sync('followups', f, true)) return; if (!await sync('activities', a)) return; return done('Follow-up saved');
     }
     if (kind === 'entity') {
       const isC = form.dataset.k === 'college', arr = isC ? DB.colleges : DB.homes, id = form.dataset.id;
       const o = id ? arr.find(x => x.id === id) : { id: nextId(arr, isC ? 'C' : 'H') };
       o.name = fd.name; o.phone = fd.phone; o.email = fd.email;
-      if (isC) { o.coordinator = fd.person; o.homeId = fd.link; o.target = +fd.target || 0; if (o.homeId) { const h = DB.homes.find(x => x.id === o.homeId); if (h) h.collegeId = o.id; } }
-      else { o.head = fd.person; o.collegeId = fd.link; if (o.collegeId) { const c = DB.colleges.find(x => x.id === o.collegeId); if (c) c.homeId = o.id; } }
+      if (isC) { o.coordinator = fd.person; o.homeId = fd.link; o.target = +fd.target || 0; } else { o.head = fd.person; o.collegeId = fd.link; }
       if (!id) arr.push(o);
-      log((id ? 'Edited ' : 'Added ') + (isC ? 'college' : 'welfare home'), o.name); save(); closeModal(); render(); return toast('Saved');
+      if (!await sync(isC ? 'colleges' : 'homes', o, !id)) return;
+      const other = isC ? DB.homes.find(x => x.id === o.homeId) : DB.colleges.find(x => x.id === o.collegeId);   // keep the college-home pair in step
+      if (other) { if (isC) other.collegeId = o.id; else other.homeId = o.id; if (!await sync(isC ? 'homes' : 'colleges', other)) return; }
+      log((id ? 'Edited ' : 'Added ') + (isC ? 'college' : 'welfare home'), o.name); save(); return done('Saved');
     }
-    if (kind === 'mou') { const m = DB.mous.find(x => x.id === form.dataset.id); Object.assign(m, { start: fd.start, end: fd.end, renewal: fd.renewal }); log('Updated MoU', college(m.collegeId).name); save(); closeModal(); render(); return toast('MoU updated'); }
+    if (kind === 'mou') { const m = DB.mous.find(x => x.id === form.dataset.id); Object.assign(m, { start: fd.start, end: fd.end, renewal: fd.renewal }); log('Updated MoU', college(m.collegeId).name); save(); if (!await sync('mous', m)) return; return done('MoU updated'); }
     if (kind === 'review') {
       const id = form.dataset.id, r = id ? DB.reviews.find(x => x.id === id) : { id: nextId(DB.reviews, 'R') };
       Object.assign(r, { collegeId: fd.collegeId, date: fd.date, quarter: fd.quarter, minutes: fd.minutes, actions: fd.actions }); if (!id) DB.reviews.push(r);
-      log(id ? 'Edited review' : 'Scheduled review', college(r.collegeId).name); save(); closeModal(); render(); return toast('Review saved');
+      log(id ? 'Edited review' : 'Scheduled review', college(r.collegeId).name); save(); if (!await sync('reviews', r, !id)) return; return done('Review saved');
     }
     if (kind === 'user') {
       const u = { id: nextId(DB.users, 'U'), name: fd.name, email: fd.email, role: fd.role, active: true };
       if (fd.link && fd.link.startsWith('c:')) u.collegeId = fd.link.slice(2); if (fd.link && fd.link.startsWith('h:')) u.homeId = fd.link.slice(2);
       if (u.role === 'college' && !u.collegeId) return toast('Pick a college for this coordinator');
       if (u.role === 'home' && !u.homeId) return toast('Pick a welfare home for this user');
-      DB.users.push(u); log('Added user', u.name + ' (' + ROLES[u.role].label + ')'); save(); closeModal(); render(); return toast('User added');
+      DB.users.push(u); log('Added user', u.name + ' (' + ROLES[u.role].label + ')'); save(); if (!await sync('users', u, true)) return; return done('User added — default password applies');
     }
   });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
-  render();
+  /* start: restore a session if one is open, otherwise show sign-in */
+  (async function init() {
+    if (API) {
+      try { S.token = sessionStorage.getItem(TOKEN_KEY) || ''; } catch (e) { }
+      if (S.token) { try { await refresh(); } catch (e) { S.token = ''; S.user = null; } }
+    }
+    render();
+  })();
 })();
