@@ -35,12 +35,18 @@
     }
     return j;
   }
-  async function refresh() { const j = await api('bootstrap'); DB = j.data; S.user = j.user; }
+  // A refresh that started before a save finished would overwrite the save with stale data, so it is dropped.
+  let mutSeq = 0, pending = 0;
+  async function refresh() { const seq = mutSeq; const j = await api('bootstrap'); if (seq !== mutSeq || pending > 0) return false; DB = j.data; S.user = j.user; return true; }
   // Saves one row to the sheet. Returns false (after reloading) if the server refused it.
   async function sync(table, row, isNew) {
     if (!API) return true;
-    try { const j = await api('save', { table, row, isNew: !!isNew }); Object.assign(row, j.row); return true; }
-    catch (e) { toast(e.message); try { await refresh(); } catch (_) { } render(); return false; }
+    mutSeq++; pending++;
+    let ok = false, err;
+    try { const j = await api('save', { table, row, isNew: !!isNew }); Object.assign(row, j.row); ok = true; } catch (e) { err = e; }
+    pending--; mutSeq++;
+    if (!ok) { toast(err.message); try { await refresh(); } catch (_) { } render(); }
+    return ok;
   }
   const nextId = (arr, p) => p + (arr.reduce((m, x) => Math.max(m, parseInt(String(x.id).slice(p.length)) || 0), 0) + 1);
 
