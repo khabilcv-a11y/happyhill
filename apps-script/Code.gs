@@ -1,4 +1,5 @@
 /**
+ * @OnlyCurrentDoc
  * Happy Hill Tracker - Google Apps Script backend.
  * Bound to the Google Sheet that stores the data. Deploy as a Web app
  * (Execute as: Me, Who has access: Anyone) and paste the URL into js/config.js.
