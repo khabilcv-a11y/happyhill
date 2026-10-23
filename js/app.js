@@ -37,7 +37,7 @@
   }
   // A refresh that started before a save finished would overwrite the save with stale data, so it is dropped.
   let mutSeq = 0, pending = 0;
-  async function refresh() { const seq = mutSeq; const j = await api('bootstrap'); if (seq !== mutSeq || pending > 0) return false; DB = j.data; S.user = j.user; return true; }
+  async function refresh() { const seq = mutSeq, tok = S.token; const j = await api('bootstrap'); if (seq !== mutSeq || pending > 0 || !S.token || tok !== S.token) return false; DB = j.data; S.user = j.user; return true; }   // also dropped if the user signed out meanwhile
   // Saves one row to the sheet. Returns false (after reloading) if the server refused it.
   async function sync(table, row, isNew) {
     if (!API) return true;
