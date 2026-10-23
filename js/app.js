@@ -83,7 +83,7 @@
   const LOGO_DCIP = '<img src="assets/dcip-logo.png" alt="DCIP Kozhikode" onerror="this.remove()">';
 
   /* ---------- state ---------- */
-  const S = { user: null, token: '', route: 'dashboard', cal: new Date(new Date().getFullYear(), new Date().getMonth(), 1), f: { q: '', college: '', status: '', wf: '' }, logQ: '', menu: false, reqSel: '', reqTab: 'active' };
+  const S = { user: null, token: '', route: 'dashboard', cal: new Date(new Date().getFullYear(), new Date().getMonth(), 1), f: { q: '', college: '', status: '', wf: '' }, logQ: '', menu: false, reqSel: '', reqTab: '' };
 
   function log(action, detail) {
     if (API) return;                          // the server writes the audit log itself
@@ -218,7 +218,7 @@
     const mouAlerts = DB.mous.filter(m => mouStatus(m) !== 'Active' && (isStaff() || m.collegeId === S.user.collegeId || m.homeId === S.user.homeId));
     const hr = new Date().getHours(), greet = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
     const hero = `<section class="hero"><div><h2>${greet}, ${esc(S.user.name.split(' ')[0])}</h2>
-      <p>${c.Delayed ? `${c.Delayed} activit${c.Delayed > 1 ? 'ies are' : 'y is'} running late.` : 'Everything is on track.'} ${verifyQ.length && isStaff() ? `${verifyQ.length} waiting for verification.` : `${monthDone} of ${target} activities completed this month.`}</p></div>
+      <p>${c.Delayed ? `${c.Delayed} activit${c.Delayed > 1 ? 'ies are' : 'y is'} running late.` : 'Everything is on track.'} ${verifyQ.length && isStaff() ? `${verifyQ.length} waiting for verification.` : `${monthDone} of ${target} activities completed this month.`}${S.user.role === 'college' && openReqCount() ? ` ${openReqCount()} request${openReqCount() > 1 ? 's' : ''} to attend.` : ''}</p></div>
       ${canAddAct() ? `<button class="btn" data-act="newAct">${svg('M12 5v14M5 12h14')}New activity</button>` : `<button class="btn" data-act="nav" data-r="activities">View activities</button>`}</section>`;
     return `${hero}<div class="grid g-kpi">
       ${isStaff() ? kpi(DB.colleges.length, 'Partner colleges', 't-green', NAV.colleges[1]) + kpi(DB.homes.length, 'Welfare homes', 't-brown', NAV.homes[1]) : ''}
@@ -226,7 +226,7 @@
       ${kpi(c.Completed, 'Completed', 't-green', 'M5 13l4 4L19 7')}
       ${kpi(c.pending, 'Pending', 't-amber', NAV.followups[1])}
       ${kpi(c.Delayed, 'Delayed', 't-red', 'M12 9v4M12 17h.01M10.3 3.9L2 18a2 2 0 001.7 3h16.6a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z')}
-      ${kpi(openReqCount(), 'Open requests', 't-violet', NAV.requests[1])}
+      ${kpi(openReqCount(), S.user.role === 'college' ? 'Requests to attend' : 'Open requests', 't-violet', NAV.requests[1])}
     </div>
     ${reqBlock()}
     <div class="grid g-2" style="margin-top:16px">
@@ -460,6 +460,11 @@
   const isOpenReq = r => r.status !== 'Closed';
   const reqSort = (a, b) => (a.status === 'Closed') - (b.status === 'Closed') || (b.priority === 'Urgent') - (a.priority === 'Urgent') || String(b.updatedAt).localeCompare(String(a.updatedAt));
   const openReqCount = () => scopeReqs().filter(isOpenReq).length;
+  // Colleges are the providers: they attend the requests their welfare home (or the District) raises, they do not raise any.
+  const canRaiseReq = () => S.user.role !== 'college';
+  const canWorkReq = r => isStaff() || (S.user.role === 'college' && r.collegeId === S.user.collegeId);
+  const canCloseReq = r => canWorkReq(r) || (S.user.role === 'home' && r.homeId === S.user.homeId && r.raisedRole === 'home');
+  const inTab = (r, tab) => tab === 'all' || (tab === 'Closed' ? r.status === 'Closed' : tab === 'active' ? r.status !== 'Closed' : r.status === tab);
 
   function reqRow(r) {
     const t = REQ_TYPES[r.type] || REQ_TYPES.Other;
@@ -470,17 +475,17 @@
   function reqBlock() {
     const u = S.user, all = scopeReqs().slice().sort(reqSort);
     const list = u.role === 'home' ? all.slice(0, 5) : all.filter(isOpenReq).slice(0, 5);
-    const title = u.role === 'home' ? 'Your requests' : u.role === 'college' ? 'Pending requests' : 'Open requests';
-    const sub = u.role === 'home' ? 'Track what you have asked for, and its status.' : 'Waiting to be attended.';
+    const title = u.role === 'home' ? 'Your requests' : u.role === 'college' ? 'Requests to attend' : 'Open requests';
+    const sub = u.role === 'home' ? 'Track what you have asked for, and its status.' : u.role === 'college' ? 'Raised by your welfare home. Pick them up and close them when done.' : 'Waiting to be attended.';
     return `<div class="card" style="margin-top:16px"><div class="card-head"><div><h2>${title}</h2><div class="muted small">${sub}</div></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" data-act="nav" data-r="requests">Open all</button><button class="btn sm primary" data-act="newReq">${svg('M12 5v14M5 12h14')}New request</button></div></div>
-      ${list.length ? list.map(reqRow).join('') : empty(u.role === 'home' ? 'No requests yet. Raise one when you need something.' : 'Nothing pending.')}</div>`;
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" data-act="nav" data-r="requests">Open all</button>${canRaiseReq() ? `<button class="btn sm primary" data-act="newReq">${svg('M12 5v14M5 12h14')}New request</button>` : ''}</div></div>
+      ${list.length ? list.map(reqRow).join('') : empty(u.role === 'home' ? 'No requests yet. Raise one when you need something.' : u.role === 'college' ? 'Nothing waiting. Requests from your welfare home appear here.' : 'Nothing pending.')}</div>`;
   }
 
   function reqListHtml() {
     const all = scopeReqs().slice().sort(reqSort), tab = S.reqTab;
-    const list = all.filter(r => tab === 'all' || (tab === 'Closed' ? r.status === 'Closed' : r.status !== 'Closed'));
-    if (!list.length) return empty(tab === 'Closed' ? 'No closed requests yet.' : 'No requests here.');
+    const list = all.filter(r => inTab(r, tab));
+    if (!list.length) return empty(tab === 'Closed' ? 'No closed requests yet.' : S.user.role === 'college' ? 'Nothing here. Requests from your welfare home appear in this list.' : 'No requests here.');
     return list.map(r => {
       const t = REQ_TYPES[r.type] || REQ_TYPES.Other, ms = msgsFor(r.id), last = ms.filter(m => m.kind !== 'status').pop();
       return `<div class="req-item ${S.reqSel === r.id ? 'active' : ''}" data-act="reqSel" data-id="${r.id}">
@@ -491,13 +496,14 @@
     }).join('');
   }
   function reqHead(r) {
-    const btns = [];
-    if (r.status === 'Open') btns.push(`<button class="btn sm" data-act="reqStatus" data-id="${r.id}" data-to="In progress">Start work</button>`);
-    if (r.status !== 'Closed') btns.push(`<button class="btn sm primary" data-act="reqClose" data-id="${r.id}">Close request</button>`);
-    else btns.push(`<button class="btn sm" data-act="reqStatus" data-id="${r.id}" data-to="Open">Reopen</button>`);
+    const btns = [], who = college(r.collegeId).name;
+    if (r.status === 'Open' && canWorkReq(r)) btns.push(`<button class="btn sm" data-act="reqStatus" data-id="${r.id}" data-to="In progress">Start work</button>`);
+    if (r.status !== 'Closed' && canCloseReq(r)) btns.push(`<button class="btn sm primary" data-act="reqClose" data-id="${r.id}">${canWorkReq(r) ? 'Close request' : 'Mark as resolved'}</button>`);
+    if (r.status === 'Closed') btns.push(`<button class="btn sm" data-act="reqStatus" data-id="${r.id}" data-to="Open">Reopen</button>`);
+    const line = r.status === 'Open' ? `Waiting for ${who} to pick this up.` : r.status === 'In progress' ? `${who} is working on it.` : '';
     return `<button class="btn sm back" data-act="reqBack">\u2039 All requests</button>
       <div class="card-head" style="margin:8px 0 4px"><h2>${esc(r.title)}</h2><div style="display:flex;gap:6px;flex-wrap:wrap">${chip(r.status)}${r.priority === 'Urgent' ? chip('Urgent') : ''}</div></div>
-      <div class="muted small">${esc(r.id)} · ${esc(college(r.collegeId).name)} \u2194 ${esc(home(r.homeId).name)}</div>
+      <div class="muted small">${esc(r.id)} · ${esc(college(r.collegeId).name)} \u2194 ${esc(home(r.homeId).name)}${line ? ' · ' + esc(line) : ''}</div>
       ${r.status === 'Closed' ? `<div class="req-closed"><b>Closed by ${esc(r.closedBy)}</b> · ${ago(r.closedAt)}<br>${esc(r.closeNote)}</div>` : ''}
       <div class="req-actions">${btns.join('')}</div>`;
   }
@@ -512,19 +518,19 @@
     return card + msgs;
   }
   function requestsV() {
-    const all = scopeReqs(), n = {
-      active: all.filter(isOpenReq).length, Closed: all.filter(r => r.status === 'Closed').length, all: all.length
-    };
-    const shown = all.slice().sort(reqSort).filter(r => S.reqTab === 'all' || (S.reqTab === 'Closed' ? r.status === 'Closed' : r.status !== 'Closed'));
+    if (!S.reqTab) S.reqTab = S.user.role === 'college' ? 'Open' : 'active';
+    const all = scopeReqs(), n = {};
+    ['active', 'Open', 'In progress', 'Closed', 'all'].forEach(k => { n[k] = all.filter(r => inTab(r, k)).length; });
+    const shown = all.slice().sort(reqSort).filter(r => inTab(r, S.reqTab));
     if (!reqById(S.reqSel) || !shown.some(r => r.id === S.reqSel)) S.reqSel = window.innerWidth > 900 && shown[0] ? shown[0].id : '';
     const sel = reqById(S.reqSel);
     const tab = (k, l) => `<button class="tab ${S.reqTab === k ? 'on' : ''}" data-act="reqTab" data-k="${k}">${l} <span>${n[k]}</span></button>`;
-    return `<div class="toolbar"><div class="tabs">${tab('active', 'Active')}${tab('Closed', 'Closed')}${tab('all', 'All')}</div><span style="flex:1"></span>
-      <button class="btn primary" data-act="newReq">${svg('M12 5v14M5 12h14')}New request</button></div>
+    return `<div class="toolbar"><div class="tabs">${tab('active', 'Active')}${tab('Open', S.user.role === 'college' ? 'New' : 'Open')}${tab('In progress', 'In progress')}${tab('Closed', 'Closed')}${tab('all', 'All')}</div><span style="flex:1"></span>
+      ${canRaiseReq() ? `<button class="btn primary" data-act="newReq">${svg('M12 5v14M5 12h14')}New request</button>` : ''}</div>
       <div class="req-wrap ${sel ? 'has-sel' : ''}"><div class="req-list" id="req-list">${reqListHtml()}</div>
       <div class="card req-pane" id="req-pane">${sel ? `<div id="req-head">${reqHead(sel)}</div><div class="req-body" id="req-body">${reqBody(sel)}</div>
         <form class="composer" data-form="reqmsg" data-id="${sel.id}"><textarea name="text" rows="2" placeholder="Write a message. Press Enter to send." required></textarea><button class="btn primary">Send</button></form>`
-        : `<div class="empty">Pick a request on the left, or raise a new one.<br><br><button class="btn primary" data-act="newReq">New request</button></div>`}</div></div>`;
+        : `<div class="empty">${canRaiseReq() ? 'Pick a request on the left, or raise a new one.<br><br><button class="btn primary" data-act="newReq">New request</button>' : 'Pick a request on the left to read it and reply.'}</div>`}</div></div>`;
   }
   // Update the list and thread in place so a half-typed message is never lost.
   function renderReqPartial() {
@@ -534,6 +540,7 @@
     const badge = document.querySelector('.nav a[data-r=requests] .count'); if (badge) badge.textContent = openReqCount();
   }
   function reqForm() {
+    if (!canRaiseReq()) return toast('Colleges attend requests. Your welfare home raises them.');
     const staff = isStaff();
     const types = Object.keys(REQ_TYPES).map(k => `<option value="${k}">${REQ_TYPES[k].label}</option>`).join('');
     const first = REQ_TYPES.Material;
@@ -594,7 +601,7 @@
     logout: () => {
       log('Signed out');
       if (API) { api('logout').catch(() => { }); DB = emptyDB(); try { sessionStorage.removeItem(TOKEN_KEY); } catch (e) { } S.token = ''; }
-      S.user = null; S.route = 'dashboard'; S.reqSel = ''; try { sessionStorage.removeItem(SESS_KEY); sessionStorage.removeItem(ROUTE_KEY); } catch (e) { }
+      S.user = null; S.route = 'dashboard'; S.reqSel = ''; S.reqTab = ''; try { sessionStorage.removeItem(SESS_KEY); sessionStorage.removeItem(ROUTE_KEY); } catch (e) { }
       render();
     },
     retry: () => location.reload(),
@@ -672,6 +679,7 @@
       return;
     }
     if (kind === 'req') {
+      if (!canRaiseReq()) return toast('Colleges attend requests. Your welfare home raises them.');
       const u = S.user, colId = u.role === 'college' ? u.collegeId : u.role === 'home' ? (DB.colleges.find(c => c.homeId === u.homeId) || {}).id : fd.collegeId;
       const c = DB.colleges.find(x => x.id === colId); if (!c) return toast('Choose a college');
       const now = new Date().toISOString();

@@ -237,9 +237,9 @@ function authorize_(user, key, existing, inc) {
   if (key === 'requests') {
     var nowIso = new Date().toISOString();
     if (!existing) {
+      if (role === 'college') throw new Error('Colleges attend requests; your welfare home or the District raises them');
       var cols = readAll_('colleges'), col;
-      if (role === 'college') col = cols.filter(function (c) { return c.id === user.collegeId; })[0];
-      else if (role === 'home') col = cols.filter(function (c) { return c.homeId === user.homeId; })[0];
+      if (role === 'home') col = cols.filter(function (c) { return c.homeId === user.homeId; })[0];
       else col = cols.filter(function (c) { return c.id === inc.collegeId; })[0];
       if (!col) throw new Error('College not found');
       var title = String(inc.title || '').trim(), details = String(inc.details || '').trim();
@@ -256,6 +256,9 @@ function authorize_(user, key, existing, inc) {
     var to = inc.status;
     if (['Open', 'In progress', 'Closed'].indexOf(to) < 0 || to === existing.status) throw new Error('No change to make');
     if (to === 'In progress' && existing.status !== 'Open') throw new Error('Only an open request can be started');
+    var provider = role === 'college' || STAFF.indexOf(role) >= 0;      // the college (or the District) attends a request
+    if (to === 'In progress' && !provider) throw new Error('Only the college or the District can start work on a request');
+    if (to === 'Closed' && !provider && !(role === 'home' && existing.raisedRole === 'home')) throw new Error('Only the college or the District can close this request');
     var upd = {}; Object.keys(existing).forEach(function (k) { upd[k] = existing[k]; });
     upd.status = to; upd.updatedAt = nowIso;
     if (to === 'Closed') {

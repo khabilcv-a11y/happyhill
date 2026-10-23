@@ -75,12 +75,12 @@
   const requests = [
     { id: 'Q1', collegeId: 'C1', homeId: 'H1', type: 'Material', title: 'Envelope-making material running low', details: 'The vocational group has used most of the paper and glue. We need a fresh stock to continue the envelope-making sessions.', specifics: '200 envelopes worth of paper, 4 glue bottles', priority: 'Urgent', neededBy: off(6), activityId: '', status: 'In progress', raisedBy: 'Superintendent 1', raisedRole: 'home', createdAt: iso(-70), updatedAt: iso(-20), closedBy: '', closedAt: '', closeNote: '' },
     { id: 'Q2', collegeId: 'C2', homeId: 'H2', type: 'Session', title: 'Counselling session for the evening group', details: 'We would like one more counselling session this month, ideally in the evening after tea.', specifics: 'Group counselling, resource person from the college', priority: 'Normal', neededBy: off(14), activityId: '', status: 'Open', raisedBy: 'Superintendent 2', raisedRole: 'home', createdAt: iso(-30), updatedAt: iso(-30), closedBy: '', closedAt: '', closeNote: '' },
-    { id: 'Q3', collegeId: 'C1', homeId: 'H1', type: 'Intervention', title: 'Leaking roof in the activity room', details: 'Water enters the activity room during rain, so sessions have been moved to the verandah.', specifics: 'Maintenance team / PWD', priority: 'Urgent', neededBy: '', activityId: '', status: 'Closed', raisedBy: 'Coordinator 1', raisedRole: 'college', createdAt: iso(-300), updatedAt: iso(-120), closedBy: 'DCIP Intern', closedAt: iso(-120), closeNote: 'Repair completed by the maintenance team on site.' }
+    { id: 'Q3', collegeId: 'C1', homeId: 'H1', type: 'Intervention', title: 'Leaking roof in the activity room', details: 'Water enters the activity room during rain, so sessions have been moved to the verandah.', specifics: 'Maintenance team / PWD', priority: 'Urgent', neededBy: '', activityId: '', status: 'Closed', raisedBy: 'Superintendent 1', raisedRole: 'home', createdAt: iso(-300), updatedAt: iso(-120), closedBy: 'DCIP Intern', closedAt: iso(-120), closeNote: 'Repair completed by the maintenance team on site.' }
   ];
   const messages = [
     { id: 'G1', requestId: 'Q1', by: 'Coordinator 1', role: 'college', at: iso(-60), kind: 'message', text: 'Noted. We will bring the paper and glue with us on our next visit.' },
     { id: 'G2', requestId: 'Q1', by: 'Coordinator 1', role: 'college', at: iso(-20), kind: 'status', text: 'marked it in progress' },
-    { id: 'G3', requestId: 'Q3', by: 'DCIP Intern', role: 'admin', at: iso(-250), kind: 'message', text: 'Forwarded to the District office. Will update soon.' },
+    { id: 'G3', requestId: 'Q3', by: 'Coordinator 1', role: 'college', at: iso(-250), kind: 'message', text: 'Reported to the District office. We will update you soon.' },
     { id: 'G4', requestId: 'Q3', by: 'DCIP Intern', role: 'admin', at: iso(-120), kind: 'status', text: 'closed the request: Repair completed by the maintenance team on site.' }
   ];
   const users = [
