@@ -5,7 +5,7 @@
  * The sheet itself stays private; every read/write goes through the checks below.
  */
 var DEFAULT_PASSWORD = 'NK@12345';
-var SESSION_SECONDS = 21600;          // 6 hours (maximum for CacheService)
+var SESSION_SECONDS = 43200;          // 12 hours; sessions are signed tokens, so they survive page refreshes and cache clean-ups
 var MAX_FAILS = 5;                    // failed sign-ins before a 15 minute lock
 
 var STAFF = ['district', 'admin', 'superadmin'];
@@ -18,8 +18,11 @@ var T = {
   followups:  { sheet: 'Followups', prefix: 'F', cols: ['id', 'activityId', 'reason', 'action', 'owner', 'due', 'done'], bool: ['done'] },
   mous:       { sheet: 'MoUs', prefix: 'M', cols: ['id', 'collegeId', 'homeId', 'start', 'end', 'renewal'] },
   reviews:    { sheet: 'Reviews', prefix: 'R', cols: ['id', 'collegeId', 'date', 'quarter', 'minutes', 'actions'] },
-  resources:  { sheet: 'Resources', prefix: 'D', cols: ['id', 'title', 'kind', 'url'] }
+  resources:  { sheet: 'Resources', prefix: 'D', cols: ['id', 'title', 'kind', 'url'] },
+  requests:   { sheet: 'Requests', prefix: 'Q', cols: ['id', 'collegeId', 'homeId', 'type', 'title', 'details', 'specifics', 'priority', 'neededBy', 'activityId', 'status', 'raisedBy', 'raisedRole', 'createdAt', 'updatedAt', 'closedBy', 'closedAt', 'closeNote'] },
+  messages:   { sheet: 'Messages', prefix: 'G', cols: ['id', 'requestId', 'by', 'role', 'at', 'kind', 'text'] }
 };
+var REQ_TYPES = ['Material', 'Session', 'Intervention', 'Attention', 'Other'];
 var LOG_COLS = ['t', 'user', 'role', 'action', 'detail'];
 var SETTINGS_COLS = ['key', 'value'];
 
@@ -44,7 +47,7 @@ function route_(req) {
   if (a === 'login') return login_(req);
   var user = auth_(req.token);
   if (a === 'bootstrap') return { ok: true, user: publicUser_(user), data: bootstrap_(user) };
-  if (a === 'logout') { CacheService.getScriptCache().remove('s_' + req.token); addLog_(user, 'Signed out', ''); return { ok: true }; }
+  if (a === 'logout') { addLog_(user, 'Signed out', ''); return { ok: true }; }
   if (a === 'changePassword') return changePassword_(user, req);
   if (a === 'resetPassword') return resetPassword_(user, req);
   if (a === 'save') return withLock_(function () { return save_(user, req); });
@@ -78,18 +81,30 @@ function login_(req) {
     throw new Error('Incorrect email or password');
   }
   cache.remove(failKey);
-  var token = Utilities.getUuid() + Utilities.getUuid();
-  cache.put('s_' + token, user.id, SESSION_SECONDS);
+  var token = makeToken_(user);
   addLog_(user, 'Signed in', '');
   return { ok: true, token: token, mustChange: !!user.mustChange, user: publicUser_(user) };
 }
 
+/* Sessions are signed tokens (HMAC), not cache entries, so a refresh or a cache clean-up never logs anyone out.
+   A token stops working when it expires, when the user is disabled, or when their password changes or is reset. */
+function secret_() {
+  var props = PropertiesService.getScriptProperties(), s = props.getProperty('HH_SECRET');
+  if (!s) { s = Utilities.getUuid() + Utilities.getUuid(); props.setProperty('HH_SECRET', s); }
+  return s;
+}
+function sign_(payload) { return Utilities.base64EncodeWebSafe(Utilities.computeHmacSha256Signature(payload, secret_())); }
+function makeToken_(user) {
+  var p64 = Utilities.base64EncodeWebSafe(user.id + '|' + (Date.now() + SESSION_SECONDS * 1000) + '|' + String(user.passHash).slice(0, 10));
+  return p64 + '.' + sign_(p64);
+}
 function auth_(token) {
-  if (!token) throw new Error('AUTH');
-  var id = CacheService.getScriptCache().get('s_' + token);
-  if (!id) throw new Error('AUTH');
-  var user = readAll_('users').filter(function (u) { return u.id === id; })[0];
-  if (!user || !user.active) throw new Error('AUTH');
+  var parts = String(token || '').split('.');
+  if (parts.length !== 2 || sign_(parts[0]) !== parts[1]) throw new Error('AUTH');
+  var f = Utilities.newBlob(Utilities.base64DecodeWebSafe(parts[0])).getDataAsString().split('|');
+  if (Number(f[1]) < Date.now()) throw new Error('AUTH');
+  var user = readAll_('users').filter(function (u) { return u.id === f[0]; })[0];
+  if (!user || !user.active || String(user.passHash).slice(0, 10) !== f[2]) throw new Error('AUTH');
   return user;
 }
 
@@ -102,9 +117,10 @@ function changePassword_(user, req) {
   if (hash_(user.salt, String(req.oldPassword || '')) !== user.passHash) throw new Error('Current password is incorrect');
   return withLock_(function () {
     var salt = newSalt_();
-    updateUser_(user.id, { salt: salt, passHash: hash_(salt, np), mustChange: false });
+    var newHash = hash_(salt, np);
+    updateUser_(user.id, { salt: salt, passHash: newHash, mustChange: false });
     addLog_(user, 'Changed own password', '');
-    return { ok: true };
+    return { ok: true, token: makeToken_({ id: user.id, passHash: newHash }) };   // the old token stops working, so hand back a fresh one
   });
 }
 
@@ -134,7 +150,7 @@ function updateUser_(id, patch) {
 function bootstrap_(user) {
   var d = {
     colleges: readAll_('colleges'), homes: readAll_('homes'), activities: readAll_('activities'), followups: readAll_('followups'),
-    mous: readAll_('mous'), reviews: readAll_('reviews'), resources: readAll_('resources'), settings: readSettings_(), users: [], logs: []
+    mous: readAll_('mous'), reviews: readAll_('reviews'), resources: readAll_('resources'), requests: readAll_('requests'), messages: readAll_('messages'), settings: readSettings_(), users: [], logs: []
   };
   if (user.role === 'college') {
     d.colleges = d.colleges.filter(function (c) { return c.id === user.collegeId; });
@@ -152,6 +168,10 @@ function bootstrap_(user) {
   var ids = {};
   d.activities.forEach(function (a) { ids[a.id] = true; });
   d.followups = d.followups.filter(function (f) { return ids[f.activityId]; });
+  d.requests = d.requests.filter(function (r) { return canSeeRequest_(user, r); });
+  var rids = {};
+  d.requests.forEach(function (r) { rids[r.id] = true; });
+  d.messages = d.messages.filter(function (m) { return rids[m.requestId]; });
   if (user.role === 'admin' || user.role === 'superadmin') d.users = readAll_('users').map(publicUser_);
   if (user.role === 'superadmin') d.logs = readLogs_(500);
   return d;
@@ -173,8 +193,13 @@ function save_(user, req) {
   if (isNew) { out.id = nextId_(key); row = sheet_(key).getLastRow() + 1; action = 'Created'; }
   else { out.id = existing.id; action = 'Edited'; }
   writeRow_(key, row, out);
+  if (key === 'messages') touchRequest_(out.requestId, out.at);
+  if (key === 'requests' && existing) {
+    action = out.status === 'Closed' ? 'Closed' : existing.status === 'Closed' ? 'Reopened' : 'Started';
+    addStatusMessage_(out, user);
+  }
 
-  var label = out.title || out.name || out.reason || out.quarter || out.id;
+  var label = String(out.title || out.name || out.reason || out.quarter || out.text || out.id).slice(0, 80);
   if (key === 'activities' && existing && existing.wf !== out.wf) action = { Submitted: 'Submitted', Verified: 'Verified', Returned: 'Returned', Draft: 'Edited' }[out.wf] || 'Edited';
   if (key === 'activities' && existing && !existing.homeConfirmed && out.homeConfirmed) action = 'Home confirmed';
   if (key === 'followups' && existing && !existing.done && out.done) action = 'Closed';
@@ -183,7 +208,7 @@ function save_(user, req) {
   return { ok: true, row: key === 'users' ? publicUser_(out) : out };
 }
 
-function singular_(k) { return { users: 'user', colleges: 'college', homes: 'welfare home', activities: 'activity', followups: 'follow-up', mous: 'MoU', reviews: 'review', resources: 'resource' }[k]; }
+function singular_(k) { return { requests: 'request', messages: 'message', users: 'user', colleges: 'college', homes: 'welfare home', activities: 'activity', followups: 'follow-up', mous: 'MoU', reviews: 'review', resources: 'resource' }[k]; }
 
 function authorize_(user, key, existing, inc) {
   var role = user.role, isStaff = STAFF.indexOf(role) >= 0, now = today_();
@@ -208,6 +233,45 @@ function authorize_(user, key, existing, inc) {
     out.updatedBy = user.name; out.updatedAt = now;
     return out;
   }
+  if (key === 'requests') {
+    var nowIso = new Date().toISOString();
+    if (!existing) {
+      var cols = readAll_('colleges'), col;
+      if (role === 'college') col = cols.filter(function (c) { return c.id === user.collegeId; })[0];
+      else if (role === 'home') col = cols.filter(function (c) { return c.homeId === user.homeId; })[0];
+      else col = cols.filter(function (c) { return c.id === inc.collegeId; })[0];
+      if (!col) throw new Error('College not found');
+      var title = String(inc.title || '').trim(), details = String(inc.details || '').trim();
+      if (!title || !details) throw new Error('Subject and details are required');
+      if (REQ_TYPES.indexOf(inc.type) < 0) throw new Error('Choose a type of request');
+      return {
+        id: '', collegeId: col.id, homeId: col.homeId, type: inc.type, title: title.slice(0, 120), details: details.slice(0, 2000),
+        specifics: String(inc.specifics || '').trim().slice(0, 200), priority: inc.priority === 'Urgent' ? 'Urgent' : 'Normal',
+        neededBy: String(inc.neededBy || ''), activityId: String(inc.activityId || ''), status: 'Open',
+        raisedBy: user.name, raisedRole: role, createdAt: nowIso, updatedAt: nowIso, closedBy: '', closedAt: '', closeNote: ''
+      };
+    }
+    if (!canSeeRequest_(user, existing)) throw new Error('Not allowed');
+    var to = inc.status;
+    if (['Open', 'In progress', 'Closed'].indexOf(to) < 0 || to === existing.status) throw new Error('No change to make');
+    if (to === 'In progress' && existing.status !== 'Open') throw new Error('Only an open request can be started');
+    var upd = {}; Object.keys(existing).forEach(function (k) { upd[k] = existing[k]; });
+    upd.status = to; upd.updatedAt = nowIso;
+    if (to === 'Closed') {
+      var note = String(inc.closeNote || '').trim();
+      if (!note) throw new Error('Add a short closing note');
+      upd.closedBy = user.name; upd.closedAt = nowIso; upd.closeNote = note.slice(0, 500);
+    } else if (existing.status === 'Closed') { upd.closedBy = ''; upd.closedAt = ''; upd.closeNote = ''; }
+    return upd;
+  }
+  if (key === 'messages') {
+    if (existing) throw new Error('Messages cannot be edited');
+    var rq = readAll_('requests').filter(function (r) { return r.id === inc.requestId; })[0];
+    if (!rq || !canSeeRequest_(user, rq)) throw new Error('Not allowed');
+    var text = String(inc.text || '').trim();
+    if (!text) throw new Error('Write a message first');
+    return { id: '', requestId: rq.id, by: user.name, role: role, at: new Date().toISOString(), kind: 'message', text: text.slice(0, 1000) };
+  }
   if (key === 'followups') {
     if (!(isStaff || role === 'college')) throw new Error('Not allowed');
     var act = readAll_('activities').filter(function (a) { return a.id === out.activityId; })[0];
@@ -230,6 +294,24 @@ function authorize_(user, key, existing, inc) {
   // colleges, homes, mous, reviews, resources
   if (!isStaff) throw new Error('Not allowed');
   return out;
+}
+
+function canSeeRequest_(user, r) {
+  if (STAFF.indexOf(user.role) >= 0) return true;
+  if (user.role === 'college') return r.collegeId === user.collegeId;
+  if (user.role === 'home') return r.homeId === user.homeId;
+  return false;
+}
+function touchRequest_(id, at) {
+  var row = findRow_('requests', id), t = T.requests;
+  var cur = rowObj_(t, sheet_('requests').getRange(row, 1, 1, t.cols.length).getValues()[0]);
+  cur.updatedAt = at;
+  writeRow_('requests', row, cur);
+}
+function addStatusMessage_(req, user) {
+  var text = req.status === 'Closed' ? 'closed the request: ' + req.closeNote : req.status === 'In progress' ? 'marked it in progress' : 'reopened the request';
+  var id = nextId_('messages');
+  writeRow_('messages', sheet_('messages').getLastRow() + 1, { id: id, requestId: req.id, by: user.name, role: user.role, at: req.updatedAt, kind: 'status', text: text });
 }
 
 /* ------------------------------------------------------------------ */

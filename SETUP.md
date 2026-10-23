@@ -39,3 +39,11 @@ Sample accounts (password for all: `NK@12345`):
 - **Passwords** are stored as salted hashes, never as plain text. Five wrong attempts lock an email for 15 minutes. Sessions last 6 hours.
 - **Never share the sheet itself** with coordinators. They only use the site.
 - **Audit log** is the `Logs` tab and the Audit Log page (Super Admin only).
+
+## Updating an existing setup (new versions of Code.gs)
+1. In the sheet: **Extensions → Apps Script**, replace the code with the new `apps-script/Code.gs`, save.
+2. Run **setup** once more. It only adds missing tabs (for example **Requests** and **Messages**) and never touches existing data.
+3. **Deploy → Manage deployments → ✏ → Version: New version → Deploy.** The web app URL stays the same.
+
+## Why the portal must be connected to the sheet
+Until `API_URL` is set in `js/config.js`, the portal runs in **preview mode**: sample data is saved only in the browser of the device being used, so nothing is shared between colleges, homes and the District. Once connected, everything an activity, follow-up or request records is stored in the sheet and every login sees what its role is allowed to see.

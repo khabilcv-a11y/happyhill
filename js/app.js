@@ -14,10 +14,14 @@
   const CFG = window.HH_CONFIG || {};
   const API = !!CFG.API_URL;                 // true once the Apps Script URL is set in js/config.js
   const DEFAULT_PW = 'NK@12345';
-  const KEY = 'hh-prototype-v1', TOKEN_KEY = 'hh-token';
+  const KEY = 'hh-prototype-v1', TOKEN_KEY = 'hh-token', SESS_KEY = 'hh-session', ROUTE_KEY = 'hh-route';
   const clone = o => JSON.parse(JSON.stringify(o));
-  const emptyDB = () => ({ colleges: [], homes: [], activities: [], followups: [], mous: [], reviews: [], resources: [], users: [], logs: [], settings: { monthlyTarget: 4 } });
-  function load() { if (API) return emptyDB(); try { const x = localStorage.getItem(KEY); if (x) return JSON.parse(x); } catch (e) { } return clone(window.SEED); }
+  const emptyDB = () => ({ colleges: [], homes: [], activities: [], followups: [], mous: [], reviews: [], resources: [], requests: [], messages: [], users: [], logs: [], settings: { monthlyTarget: 4 } });
+  function load() {
+    if (API) return emptyDB();
+    try { const x = localStorage.getItem(KEY); if (x) { const d = JSON.parse(x); ['requests', 'messages'].forEach(k => { if (!d[k]) d[k] = clone(window.SEED[k] || []); }); return d; } } catch (e) { }
+    return clone(window.SEED);
+  }
   let DB = load();
   function save() { if (API) return; try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch (e) { } }
 
@@ -41,10 +45,10 @@
   const nextId = (arr, p) => p + (arr.reduce((m, x) => Math.max(m, parseInt(String(x.id).slice(p.length)) || 0), 0) + 1);
 
   /* ---------- roles ---------- */
-  const ALL_NAV = ['dashboard', 'colleges', 'homes', 'activities', 'calendar', 'followups', 'mous', 'documents', 'reports'];
+  const ALL_NAV = ['dashboard', 'colleges', 'homes', 'activities', 'calendar', 'followups', 'requests', 'mous', 'documents', 'reports'];
   const ROLES = {
-    college: { label: 'College Coordinator', nav: ['dashboard', 'activities', 'calendar', 'followups', 'documents', 'reports'] },
-    home: { label: 'Welfare Home', nav: ['dashboard', 'activities', 'calendar', 'followups', 'documents'] },
+    college: { label: 'College Coordinator', nav: ['dashboard', 'activities', 'calendar', 'followups', 'requests', 'documents', 'reports'] },
+    home: { label: 'Welfare Home', nav: ['dashboard', 'activities', 'calendar', 'followups', 'requests', 'documents'] },
     district: { label: 'District Administration', nav: ALL_NAV },
     admin: { label: 'Admin / Intern', nav: ALL_NAV.concat('users') },
     superadmin: { label: 'Super Admin', nav: ALL_NAV.concat('users', 'logs') }
@@ -60,6 +64,7 @@
     activities: ['Activities', 'M9 11l3 3 8-8M4 12v7a1 1 0 001 1h14'],
     calendar: ['Calendar', 'M4 7h16v13H4zM4 11h16M8 3v4M16 3v4'],
     followups: ['Follow-ups', 'M12 8v4l3 2M21 12a9 9 0 11-3-6.7M21 4v5h-5'],
+    requests: ['Requests', 'M21 12a8 8 0 01-11.5 7.2L4 20l1-4.2A8 8 0 1121 12zM8 11h8M8 14h5'],
     mous: ['MoU & Reviews', 'M7 3h8l4 4v14H7zM15 3v4h4M10 12h6M10 16h6'],
     documents: ['Documents', 'M3 6a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2z'],
     reports: ['Reports', 'M5 20V10M12 20V4M19 20v-7'],
@@ -72,7 +77,7 @@
   const LOGO_DCIP = '<img src="assets/dcip-logo.png" alt="DCIP Kozhikode" onerror="this.remove()">';
 
   /* ---------- state ---------- */
-  const S = { user: null, token: '', route: 'dashboard', cal: new Date(new Date().getFullYear(), new Date().getMonth(), 1), f: { q: '', college: '', status: '', wf: '' }, logQ: '', menu: false };
+  const S = { user: null, token: '', route: 'dashboard', cal: new Date(new Date().getFullYear(), new Date().getMonth(), 1), f: { q: '', college: '', status: '', wf: '' }, logQ: '', menu: false, reqSel: '', reqTab: 'active' };
 
   function log(action, detail) {
     if (API) return;                          // the server writes the audit log itself
@@ -91,7 +96,7 @@
     }
     return a.status;
   }
-  const TONE = { Completed: 't-green', Ongoing: 't-blue', Planned: 't-grey', Upcoming: 't-violet', Delayed: 't-red', Postponed: 't-amber', 'On Hold': 't-amber', Draft: 't-grey', Submitted: 't-blue', Verified: 't-green', Returned: 't-red', Active: 't-green', Expiring: 't-amber', Expired: 't-red', Held: 't-green', Scheduled: 't-violet', 'To schedule': 't-grey' };
+  const TONE = { Completed: 't-green', Ongoing: 't-blue', Planned: 't-grey', Upcoming: 't-violet', Delayed: 't-red', Postponed: 't-amber', 'On Hold': 't-amber', Draft: 't-grey', Submitted: 't-blue', Verified: 't-green', Returned: 't-red', Active: 't-green', Expiring: 't-amber', Expired: 't-red', Held: 't-green', Scheduled: 't-violet', 'To schedule': 't-grey', Open: 't-amber', 'In progress': 't-blue', Closed: 't-green', Urgent: 't-red', Normal: 't-grey' };
   const chip = t => `<span class="chip ${TONE[t] || 't-grey'}">${esc(t)}</span>`;
   const college = id => DB.colleges.find(c => c.id === id) || { name: '—' };
   const home = id => DB.homes.find(h => h.id === id) || { name: '—' };
@@ -130,7 +135,8 @@
   }
   function shell() {
     const r = ROLES[S.user.role];
-    const items = r.nav.map(k => `<a data-act="nav" data-r="${k}" class="${S.route === k ? 'active' : ''}">${svg(NAV[k][1])}${NAV[k][0]}</a>`).join('');
+    const nOpen = openReqCount();
+    const items = r.nav.map(k => `<a data-act="nav" data-r="${k}" class="${S.route === k ? 'active' : ''}">${svg(NAV[k][1])}${NAV[k][0]}${k === 'requests' && nOpen ? `<span class="count">${nOpen}</span>` : ''}</a>`).join('');
     const who = S.user.role === 'college' ? college(S.user.collegeId).name : S.user.role === 'home' ? home(S.user.homeId).name : 'District Administration, Kozhikode';
     return `<div class="shell">
       <aside class="sidebar ${S.menu ? 'open' : ''}">
@@ -149,16 +155,18 @@
           <button class="btn" data-act="changePw">Password</button>
           <button class="btn" data-act="logout">Sign out</button>
         </div>
+        ${API ? '' : '<div class="preview-banner"><b>Preview mode.</b> Data is saved only on this device. Connect the Google Sheet to share updates between colleges, homes and the District.</div>'}
         <div id="view">${view()}</div>
       </main>
     </div>`;
   }
   function view() {
-    return ({ dashboard, colleges: collegesV, homes: homesV, activities: activitiesV, calendar: calendarV, followups: followupsV, mous: mousV, documents: documentsV, reports: reportsV, users: usersV, logs: logsV })[S.route]();
+    return ({ dashboard, colleges: collegesV, homes: homesV, activities: activitiesV, calendar: calendarV, followups: followupsV, requests: requestsV, mous: mousV, documents: documentsV, reports: reportsV, users: usersV, logs: logsV })[S.route]();
   }
   function go(r) {
     if (!ROLES[S.user.role].nav.includes(r)) r = 'dashboard'; S.route = r; S.menu = false; render(); window.scrollTo(0, 0);
-    if (API && (r === 'logs' || r === 'users' || r === 'dashboard')) refresh().then(render).catch(() => { });   // pick up other people's changes
+    try { sessionStorage.setItem(ROUTE_KEY, r); } catch (e) { }
+    if (API) refresh().then(() => { if (S.route === r && S.user && !document.querySelector('.overlay')) render(); }).catch(() => { });   // pick up other people's changes
   }
 
   /* ---------- login ---------- */
@@ -212,7 +220,9 @@
       ${kpi(c.Completed, 'Completed', 't-green', 'M5 13l4 4L19 7')}
       ${kpi(c.pending, 'Pending', 't-amber', NAV.followups[1])}
       ${kpi(c.Delayed, 'Delayed', 't-red', 'M12 9v4M12 17h.01M10.3 3.9L2 18a2 2 0 001.7 3h16.6a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z')}
+      ${kpi(openReqCount(), 'Open requests', 't-violet', NAV.requests[1])}
     </div>
+    ${reqBlock()}
     <div class="grid g-2" style="margin-top:16px">
       <div class="card"><div class="card-head"><h2>Status overview</h2><span class="muted small">${c.pct}% completed</span></div>
         <div style="display:flex;gap:22px;align-items:center;flex-wrap:wrap">
@@ -424,6 +434,134 @@
   }
   const logTable = list => list.length ? `<div class="table-wrap"><table><thead><tr><th>When</th><th>User</th><th>Role</th><th>Action</th><th>Detail</th></tr></thead><tbody>${list.slice(0, 300).map(l => `<tr><td class="small">${fmtT(l.t)}</td><td>${esc(l.user)}</td><td>${l.role ? ROLES[l.role].label : '—'}</td><td><b>${esc(l.action)}</b></td><td>${esc(l.detail)}</td></tr>`).join('')}</tbody></table></div>` : empty('No log entries.');
 
+  /* ---------- requests: structured chat between homes, colleges and the District ---------- */
+  const REQ_TYPES = {
+    Material: { label: 'Material needed', hint: 'Item and quantity', ph: 'e.g. 200 envelopes and 1 ream of paper' },
+    Session: { label: 'Session or training', hint: 'Topic and resource person', ph: 'e.g. Counselling session, resource person if known' },
+    Intervention: { label: 'Intervention required', hint: 'Who needs to act', ph: 'e.g. Social Justice Department, maintenance team' },
+    Attention: { label: 'Seeking attention', hint: 'Matter needing attention', ph: 'e.g. Water supply in the activity room' },
+    Other: { label: 'Other', hint: 'Specifics', ph: '' }
+  };
+  const ago = t => { const m = Math.round((Date.now() - new Date(t)) / 6e4); if (m < 1) return 'just now'; if (m < 60) return m + ' min ago'; const h = Math.round(m / 60); if (h < 24) return h + ' h ago'; const d = Math.round(h / 24); return d < 30 ? d + ' d ago' : fmt(String(t).slice(0, 10)); };
+  const reqById = id => (DB.requests || []).find(r => r.id === id);
+  const msgsFor = id => (DB.messages || []).filter(m => m.requestId === id).sort((a, b) => String(a.at).localeCompare(String(b.at)));
+  function scopeReqs() {
+    const u = S.user, all = DB.requests || [];
+    if (u.role === 'college') return all.filter(r => r.collegeId === u.collegeId);
+    if (u.role === 'home') return all.filter(r => r.homeId === u.homeId);
+    return all;
+  }
+  const isOpenReq = r => r.status !== 'Closed';
+  const reqSort = (a, b) => (a.status === 'Closed') - (b.status === 'Closed') || (b.priority === 'Urgent') - (a.priority === 'Urgent') || String(b.updatedAt).localeCompare(String(a.updatedAt));
+  const openReqCount = () => scopeReqs().filter(isOpenReq).length;
+
+  function reqRow(r) {
+    const t = REQ_TYPES[r.type] || REQ_TYPES.Other;
+    return `<div data-act="reqOpen" data-id="${r.id}" style="display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);cursor:pointer">
+      <div style="min-width:0"><b>${esc(r.title)}</b><div class="muted small">${esc(t.label)} · ${esc(college(r.collegeId).name)} ↔ ${esc(home(r.homeId).name)} · ${ago(r.updatedAt)}</div></div>
+      <div style="display:flex;gap:6px;align-items:flex-start;flex-wrap:wrap;justify-content:flex-end">${r.priority === 'Urgent' && r.status !== 'Closed' ? chip('Urgent') : ''}${chip(r.status)}</div></div>`;
+  }
+  function reqBlock() {
+    const u = S.user, all = scopeReqs().slice().sort(reqSort);
+    const list = u.role === 'home' ? all.slice(0, 5) : all.filter(isOpenReq).slice(0, 5);
+    const title = u.role === 'home' ? 'Your requests' : u.role === 'college' ? 'Pending requests' : 'Open requests';
+    const sub = u.role === 'home' ? 'Track what you have asked for, and its status.' : 'Waiting to be attended.';
+    return `<div class="card" style="margin-top:16px"><div class="card-head"><div><h2>${title}</h2><div class="muted small">${sub}</div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" data-act="nav" data-r="requests">Open all</button><button class="btn sm primary" data-act="newReq">${svg('M12 5v14M5 12h14')}New request</button></div></div>
+      ${list.length ? list.map(reqRow).join('') : empty(u.role === 'home' ? 'No requests yet. Raise one when you need something.' : 'Nothing pending.')}</div>`;
+  }
+
+  function reqListHtml() {
+    const all = scopeReqs().slice().sort(reqSort), tab = S.reqTab;
+    const list = all.filter(r => tab === 'all' || (tab === 'Closed' ? r.status === 'Closed' : r.status !== 'Closed'));
+    if (!list.length) return empty(tab === 'Closed' ? 'No closed requests yet.' : 'No requests here.');
+    return list.map(r => {
+      const t = REQ_TYPES[r.type] || REQ_TYPES.Other, ms = msgsFor(r.id), last = ms.filter(m => m.kind !== 'status').pop();
+      return `<div class="req-item ${S.reqSel === r.id ? 'active' : ''}" data-act="reqSel" data-id="${r.id}">
+        <div class="req-top">${chip(r.status)}${r.priority === 'Urgent' && r.status !== 'Closed' ? chip('Urgent') : ''}<span class="muted small" style="margin-left:auto">${ago(r.updatedAt)}</span></div>
+        <b>${esc(r.title)}</b>
+        <div class="muted small">${esc(t.label)} · ${esc(college(r.collegeId).name)} ↔ ${esc(home(r.homeId).name)}</div>
+        ${last ? `<div class="small muted req-last">${esc(last.by)}: ${esc(String(last.text).slice(0, 80))}</div>` : ''}</div>`;
+    }).join('');
+  }
+  function reqHead(r) {
+    const btns = [];
+    if (r.status === 'Open') btns.push(`<button class="btn sm" data-act="reqStatus" data-id="${r.id}" data-to="In progress">Start work</button>`);
+    if (r.status !== 'Closed') btns.push(`<button class="btn sm primary" data-act="reqClose" data-id="${r.id}">Close request</button>`);
+    else btns.push(`<button class="btn sm" data-act="reqStatus" data-id="${r.id}" data-to="Open">Reopen</button>`);
+    return `<button class="btn sm back" data-act="reqBack">\u2039 All requests</button>
+      <div class="card-head" style="margin:8px 0 4px"><h2>${esc(r.title)}</h2><div style="display:flex;gap:6px;flex-wrap:wrap">${chip(r.status)}${r.priority === 'Urgent' ? chip('Urgent') : ''}</div></div>
+      <div class="muted small">${esc(r.id)} · ${esc(college(r.collegeId).name)} \u2194 ${esc(home(r.homeId).name)}</div>
+      ${r.status === 'Closed' ? `<div class="req-closed"><b>Closed by ${esc(r.closedBy)}</b> · ${ago(r.closedAt)}<br>${esc(r.closeNote)}</div>` : ''}
+      <div class="req-actions">${btns.join('')}</div>`;
+  }
+  function reqBody(r) {
+    const t = REQ_TYPES[r.type] || REQ_TYPES.Other, act = r.activityId && actById(r.activityId);
+    const card = `<div class="req-card"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span class="chip t-brown">${esc(t.label)}</span><span class="muted small">Raised by ${esc(r.raisedBy)} · ${ago(r.createdAt)}</span></div>
+      <p style="margin:10px 0 0">${esc(r.details).replace(/\n/g, '<br>')}</p>
+      <div class="req-grid"><div><label>${esc(t.hint)}</label>${esc(r.specifics) || '\u2014'}</div><div><label>Needed by</label>${r.neededBy ? fmt(r.neededBy) : '\u2014'}</div><div><label>Priority</label>${esc(r.priority)}</div><div><label>Related activity</label>${act ? esc(act.title) : '\u2014'}</div></div></div>`;
+    const msgs = msgsFor(r.id).map(m => m.kind === 'status'
+      ? `<div class="sys">${esc(m.by)} \u00b7 ${esc(m.text)} \u00b7 ${ago(m.at)}</div>`
+      : `<div class="bubble ${m.by === S.user.name && m.role === S.user.role ? 'me' : ''}"><div class="who">${esc(m.by)} \u00b7 ${esc(ROLES[m.role] ? ROLES[m.role].label : m.role)} \u00b7 ${ago(m.at)}</div>${esc(m.text).replace(/\n/g, '<br>')}</div>`).join('');
+    return card + msgs;
+  }
+  function requestsV() {
+    const all = scopeReqs(), n = {
+      active: all.filter(isOpenReq).length, Closed: all.filter(r => r.status === 'Closed').length, all: all.length
+    };
+    const shown = all.slice().sort(reqSort).filter(r => S.reqTab === 'all' || (S.reqTab === 'Closed' ? r.status === 'Closed' : r.status !== 'Closed'));
+    if (!reqById(S.reqSel) || !shown.some(r => r.id === S.reqSel)) S.reqSel = window.innerWidth > 900 && shown[0] ? shown[0].id : '';
+    const sel = reqById(S.reqSel);
+    const tab = (k, l) => `<button class="tab ${S.reqTab === k ? 'on' : ''}" data-act="reqTab" data-k="${k}">${l} <span>${n[k]}</span></button>`;
+    return `<div class="toolbar"><div class="tabs">${tab('active', 'Active')}${tab('Closed', 'Closed')}${tab('all', 'All')}</div><span style="flex:1"></span>
+      <button class="btn primary" data-act="newReq">${svg('M12 5v14M5 12h14')}New request</button></div>
+      <div class="req-wrap ${sel ? 'has-sel' : ''}"><div class="req-list" id="req-list">${reqListHtml()}</div>
+      <div class="card req-pane" id="req-pane">${sel ? `<div id="req-head">${reqHead(sel)}</div><div class="req-body" id="req-body">${reqBody(sel)}</div>
+        <form class="composer" data-form="reqmsg" data-id="${sel.id}"><textarea name="text" rows="2" placeholder="Write a message. Press Enter to send." required></textarea><button class="btn primary">Send</button></form>`
+        : `<div class="empty">Pick a request on the left, or raise a new one.<br><br><button class="btn primary" data-act="newReq">New request</button></div>`}</div></div>`;
+  }
+  // Update the list and thread in place so a half-typed message is never lost.
+  function renderReqPartial() {
+    const l = $('#req-list'), h = $('#req-head'), b = $('#req-body'), r = reqById(S.reqSel);
+    if (!l || !r || !h || !b) { render(); return; }
+    l.innerHTML = reqListHtml(); h.innerHTML = reqHead(r); b.innerHTML = reqBody(r); b.scrollTop = b.scrollHeight;
+    const badge = document.querySelector('.nav a[data-r=requests] .count'); if (badge) badge.textContent = openReqCount();
+  }
+  function reqForm() {
+    const staff = isStaff();
+    const types = Object.keys(REQ_TYPES).map(k => `<option value="${k}">${REQ_TYPES[k].label}</option>`).join('');
+    const first = REQ_TYPES.Material;
+    const acts = scopeActs().slice().sort((a, b) => b.planned.localeCompare(a.planned)).slice(0, 60).map(a => `<option value="${a.id}">${esc(a.title)} \u00b7 ${fmt(a.planned)}</option>`).join('');
+    const colSel = staff ? `<div class="full"><label>Partner college (and its welfare home)</label><select name="collegeId" required><option value="">Select\u2026</option>${DB.colleges.map(c => `<option value="${c.id}">${esc(c.name)} \u2014 ${esc(home(c.homeId).name)}</option>`).join('')}</select></div>` : '';
+    openModal('New request', `<form data-form="req"><div class="form">
+      ${colSel}
+      <div><label>Type of request</label><select name="type" data-reqtype>${types}</select></div>
+      <div><label>Priority</label><select name="priority"><option>Normal</option><option>Urgent</option></select></div>
+      <div class="full"><label>Subject</label><input name="title" required maxlength="120" placeholder="A short headline"></div>
+      <div class="full"><label id="spec-label">${first.hint}</label><input name="specifics" maxlength="200" placeholder="${first.ph}"></div>
+      <div class="full"><label>Details</label><textarea name="details" rows="3" required placeholder="What is needed, and why?"></textarea></div>
+      <div><label>Needed by (optional)</label><input name="neededBy" type="date"></div>
+      <div><label>Related activity (optional)</label><select name="activityId"><option value="">None</option>${acts}</select></div>
+      </div><p class="muted small" style="margin:12px 0 0">Please do not write residents\u2019 names or personal details here.</p>
+      <div class="modal-foot"><button type="button" class="btn" data-act="close">Cancel</button><button class="btn primary">Send request</button></div></form>`);
+  }
+  function reqCloseForm(id) {
+    openModal('Close request', `<form data-form="reqclose" data-id="${id}"><label>What was done? (shown to everyone on the request)</label>
+      <textarea name="note" rows="3" required placeholder="e.g. Materials delivered on 12 Nov"></textarea>
+      <div class="modal-foot"><button type="button" class="btn" data-act="close">Cancel</button><button class="btn primary">Close request</button></div></form>`);
+  }
+  async function setReqStatus(id, to, note) {
+    const r = reqById(id), from = r.status, now = new Date().toISOString();
+    r.status = to; r.updatedAt = now;
+    if (to === 'Closed') { r.closedBy = S.user.name; r.closedAt = now; r.closeNote = note || ''; } else if (from === 'Closed') { r.closedBy = ''; r.closedAt = ''; r.closeNote = ''; }
+    if (API) { if (!await sync('requests', r)) return false; await refresh(); }
+    else {
+      DB.messages.push({ id: nextId(DB.messages, 'G'), requestId: id, by: S.user.name, role: S.user.role, at: now, kind: 'status', text: to === 'Closed' ? 'closed the request' + (note ? ': ' + note : '') : to === 'In progress' ? 'marked it in progress' : 'reopened the request' });
+      log(to === 'Closed' ? 'Closed request' : to === 'Open' ? 'Reopened request' : 'Request in progress', r.id + ' ' + r.title); save();
+    }
+    return true;
+  }
+
   /* ---------- modal ---------- */
   function openModal(title, body) {
     $('#modal-root').innerHTML = `<div class="overlay" data-act="overlay"><div class="modal" role="dialog" aria-modal="true"><div class="modal-head"><h2 style="font-size:19px">${esc(title)}</h2><button class="x" data-act="close" aria-label="Close">✕</button></div>${body}</div></div>`;
@@ -450,8 +588,17 @@
     logout: () => {
       log('Signed out');
       if (API) { api('logout').catch(() => { }); DB = emptyDB(); try { sessionStorage.removeItem(TOKEN_KEY); } catch (e) { } S.token = ''; }
-      S.user = null; S.route = 'dashboard'; render();
+      S.user = null; S.route = 'dashboard'; S.reqSel = ''; try { sessionStorage.removeItem(SESS_KEY); sessionStorage.removeItem(ROUTE_KEY); } catch (e) { }
+      render();
     },
+    retry: () => location.reload(),
+    newReq: () => reqForm(),
+    reqSel: d => { S.reqSel = d.id; render(); const b = $('#req-body'); if (b) b.scrollTop = b.scrollHeight; },
+    reqOpen: d => { S.reqSel = d.id; S.reqTab = 'all'; go('requests'); },
+    reqBack: () => { S.reqSel = ''; render(); },
+    reqTab: d => { S.reqTab = d.k; S.reqSel = ''; render(); },
+    reqClose: d => reqCloseForm(d.id),
+    reqStatus: async d => { if (await setReqStatus(d.id, d.to)) { renderReqPartial(); toast(d.to === 'Open' ? 'Request reopened' : 'Marked in progress'); } },
     fill: d => { const f = document.querySelector('form[data-form=login]'); f.email.value = d.email; f.pw.value = DEFAULT_PW; f.pw.focus(); },
     changePw: () => changePwModal(false),
     resetPw: async d => {
@@ -459,7 +606,7 @@
       if (!confirm('Reset this user’s password to the default?')) return;
       try { await api('resetPassword', { userId: d.id }); toast('Password reset to the default'); } catch (e) { toast(e.message); }
     },
-    reset: () => { DB = clone(window.SEED); save(); toast('Sample data reset'); },
+    reset: () => { DB = clone(window.SEED); save(); try { sessionStorage.removeItem(SESS_KEY); } catch (e) { } toast('Sample data reset'); },
     close: () => closeModal(),
     overlay: (d, el, e) => { if (e.target === el) closeModal(); },
     openAct: d => actDetail(d.id),
@@ -511,12 +658,34 @@
       }
       const u = DB.users.find(x => x.email.toLowerCase() === email && x.active);
       if (!u || fd.pw !== DEFAULT_PW) return toast('Incorrect email or password');
-      S.user = u; S.route = 'dashboard'; log('Signed in'); return render();
+      S.user = u; S.route = 'dashboard'; try { sessionStorage.setItem(SESS_KEY, u.id); } catch (x) { } log('Signed in'); return render();
     }
     if (kind === 'pw') {
       if (!API) return toast('Password changes work once the Google Sheets connection is on');
-      try { await api('changePassword', { oldPassword: fd.old, newPassword: fd.nw }); closeModal(); toast('Password updated'); } catch (err) { toast(err.message); }
+      try { const j = await api('changePassword', { oldPassword: fd.old, newPassword: fd.nw }); if (j.token) { S.token = j.token; try { sessionStorage.setItem(TOKEN_KEY, j.token); } catch (x) { } } closeModal(); toast('Password updated'); } catch (err) { toast(err.message); }
       return;
+    }
+    if (kind === 'req') {
+      const u = S.user, colId = u.role === 'college' ? u.collegeId : u.role === 'home' ? (DB.colleges.find(c => c.homeId === u.homeId) || {}).id : fd.collegeId;
+      const c = DB.colleges.find(x => x.id === colId); if (!c) return toast('Choose a college');
+      const now = new Date().toISOString();
+      const r = { id: nextId(DB.requests, 'Q'), collegeId: c.id, homeId: c.homeId, type: fd.type, title: fd.title.trim(), details: fd.details.trim(), specifics: (fd.specifics || '').trim(), priority: fd.priority, neededBy: fd.neededBy || '', activityId: fd.activityId || '', status: 'Open', raisedBy: u.name, raisedRole: u.role, createdAt: now, updatedAt: now, closedBy: '', closedAt: '', closeNote: '' };
+      DB.requests.push(r); log('Raised request', r.id + ' ' + r.title); save();
+      if (!await sync('requests', r, true)) return;
+      S.reqSel = r.id; S.reqTab = 'active'; return done('Request sent');
+    }
+    if (kind === 'reqmsg') {
+      const text = (fd.text || '').trim(); if (!text) return;
+      const r = reqById(form.dataset.id), now = new Date().toISOString();
+      const m = { id: nextId(DB.messages, 'G'), requestId: r.id, by: S.user.name, role: S.user.role, at: now, kind: 'message', text };
+      DB.messages.push(m); r.updatedAt = now; save();
+      form.reset(); renderReqPartial();
+      if (!await sync('messages', m, true)) return;
+      return;
+    }
+    if (kind === 'reqclose') {
+      if (!await setReqStatus(form.dataset.id, 'Closed', (fd.note || '').trim())) return;
+      closeModal(); renderReqPartial(); return toast('Request closed');
     }
     if (kind === 'act') {
       const id = form.dataset.id, c = DB.colleges.find(x => x.id === fd.collegeId); if (!c) return toast('Choose a college');
@@ -559,14 +728,48 @@
       DB.users.push(u); log('Added user', u.name + ' (' + ROLES[u.role].label + ')'); save(); if (!await sync('users', u, true)) return; return done('User added — default password applies');
     }
   });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeModal();
+    if (e.key === 'Enter' && !e.shiftKey && e.target.matches && e.target.matches('.composer textarea')) { e.preventDefault(); e.target.form.requestSubmit(); }
+  });
+  document.addEventListener('change', e => {
+    if (e.target.matches && e.target.matches('[data-reqtype]')) {
+      const t = REQ_TYPES[e.target.value] || REQ_TYPES.Other, f = e.target.form;
+      $('#spec-label').textContent = t.hint; f.specifics.placeholder = t.ph;
+    }
+  });
 
-  /* start: restore a session if one is open, otherwise show sign-in */
+  /* start: restore the session on refresh, keep data fresh */
+  const splash = msg => `<div class="splash"><img class="logo-img" src="assets/happy-hill-logo.png" alt="Happy Hill"><p>${msg}</p></div>`;
+  function restoreRoute() { try { const r = sessionStorage.getItem(ROUTE_KEY); if (r && S.user && ROLES[S.user.role].nav.includes(r)) S.route = r; } catch (e) { } }
+  function startPolling() {
+    if (API) {
+      setInterval(async () => {
+        if (!S.user || document.hidden || document.querySelector('.overlay')) return;
+        const ae = document.activeElement, typing = ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName);
+        try { await refresh(); if (S.route === 'requests') renderReqPartial(); else if (!typing && !['users'].includes(S.route)) render(); } catch (e) { }
+      }, 30000);
+    } else {
+      window.addEventListener('storage', e => {            // another tab on this device saved something
+        if (e.key !== KEY || !S.user || document.querySelector('.overlay')) return;
+        DB = load(); S.user = DB.users.find(u => u.id === S.user.id) || null; render();
+      });
+    }
+  }
   (async function init() {
     if (API) {
       try { S.token = sessionStorage.getItem(TOKEN_KEY) || ''; } catch (e) { }
-      if (S.token) { try { await refresh(); } catch (e) { S.token = ''; S.user = null; } }
+      if (S.token) {
+        $('#app').innerHTML = splash('Restoring your session\u2026');
+        try { await refresh(); restoreRoute(); }
+        catch (e) {
+          if (/Session expired/.test(e.message)) { S.token = ''; S.user = null; }
+          else { $('#app').innerHTML = `<div class="splash"><img class="logo-img" src="assets/happy-hill-logo.png" alt="Happy Hill"><p>Could not reach the server. Your session is kept.</p><button class="btn primary" data-act="retry">Try again</button></div>`; return; }
+        }
+      }
+    } else {
+      try { const id = sessionStorage.getItem(SESS_KEY), u = id && DB.users.find(x => x.id === id && x.active); if (u) { S.user = u; restoreRoute(); } } catch (e) { }
     }
-    render();
+    render(); startPolling();
   })();
 })();
