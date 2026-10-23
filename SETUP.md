@@ -36,7 +36,7 @@ Sample accounts (password for all: `NK@12345`):
 ## Good to know
 - **Changing the script later:** after editing Code.gs choose **Deploy → Manage deployments → ✏ → Version: New version → Deploy**. The URL stays the same.
 - **Real people:** add them from the **Users** page (Admin or Super Admin). New users get the default password and must change it at first sign-in. Disable or delete the sample accounts before going live, and set `SHOW_SAMPLE_ACCOUNTS: false` in `config.js`.
-- **Passwords** are stored as salted hashes, never as plain text. Five wrong attempts lock an email for 15 minutes. Sessions last 6 hours.
+- **Passwords** are stored as salted hashes, never as plain text. Five wrong attempts lock an email for 15 minutes. Sessions last 12 hours and survive page refreshes.
 - **Never share the sheet itself** with coordinators. They only use the site.
 - **Audit log** is the `Logs` tab and the Audit Log page (Super Admin only).
 
