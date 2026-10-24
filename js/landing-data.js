@@ -102,7 +102,7 @@ window.HH_SITE = {
     { n: '4', title: 'Plans revised', text: 'Updated as interventions progress.' }
   ],
 
-  // One entry per partner college. Names are as confirmed; homes follow the DCIP presentation.
+  // One entry per partner college. Photos are from the award ceremony; homes follow the DCIP presentation.
   colleges: [
     { name: 'IHRD College of Applied Science', homes: ['Asha Bhavan for Men'], image: 'assets/photos/mou-ihrd.jpg', pos: '50% 42%' },
     { name: 'St. Joseph’s College (Autonomous), Devagiri', homes: ['Asha Bhavan for Women'], image: 'assets/photos/mou-stjoseph.jpg', pos: '50% 42%' },
@@ -118,7 +118,7 @@ window.HH_SITE = {
     { image: 'assets/photos/dreams-stage.jpg', pos: '50% 58%', title: 'DREAMS launch', text: 'Partners and the District team come together.', tag: 'Launch', date: '2026-02-03' },
     { image: 'assets/photos/tree-planting-2.jpg', pos: '50% 45%', title: 'Tree planting with SBI', text: 'Officials and SBI colleagues plant saplings.', tag: 'Community' },
     { image: 'assets/photos/partner-group-2.jpg', pos: '50% 62%', title: 'Partner colleges meet the District team', text: 'Coordinators with their Happy Hill folders.', tag: 'Partnership' },
-    { image: 'assets/photos/mou-holycross.jpg', pos: '50% 45%', title: 'Certificates for partner colleges', text: 'Each college is welcomed with a certificate.', tag: 'MoU' },
+    { image: 'assets/photos/mou-holycross.jpg', pos: '50% 45%', title: 'Partner colleges honoured', text: 'Awards presented by Dr. R. Bindu, then Minister for Higher Education and Social Justice.', tag: 'Awards' },
     { image: 'assets/photos/group-collectorate.jpg', pos: '50% 72%', title: 'Together at the Collectorate', text: 'Students, coordinators and officials.', tag: 'Gathering' },
     { image: 'assets/photos/dreams-lamp.jpg', pos: '50% 55%', title: 'Lighting the lamp', text: 'Opening the DREAMS launch.', tag: 'Launch', date: '2026-02-03' },
     { art: 'learn', title: 'Books for the After Care Home', text: 'A community call to build a library.', tag: 'Drive' },
@@ -132,10 +132,10 @@ window.HH_SITE = {
     { image: 'assets/photos/partner-group-1.jpg', alt: 'Partner college coordinators with District officials' },
     { image: 'assets/photos/dreams-speech.jpg', alt: 'A speaker addressing the DREAMS launch' },
     { image: 'assets/photos/audience.jpg', alt: 'Students and coordinators at a Happy Hill gathering' },
-    { image: 'assets/photos/mou-ihrd.jpg', alt: 'A partner college receiving its certificate' },
+    { image: 'assets/photos/mou-ihrd.jpg', alt: 'A partner college receiving its award' },
     { image: 'assets/photos/tree-planting-2.jpg', alt: 'Tree planting under the Happy Hill banner' },
     { image: 'assets/photos/group-collectorate.jpg', alt: 'A group photograph at the Collectorate' },
-    { image: 'assets/photos/mou-malabar.jpg', alt: 'A partner college and welfare home presented on screen' }
+    { image: 'assets/photos/mou-malabar.jpg', alt: 'A partner college honoured at the award ceremony' }
   ],
 
   // Reports and documents. While this list is empty the whole section is hidden from the page.
