@@ -81,7 +81,7 @@
 
   /* ----- institutions and MoU cycle ----- */
   $('#institutions').innerHTML = (D.institutions || []).map((n, i) => `<article class="card inst reveal" style="--d:${(i % 4) * 50}ms">
-      <div class="mark">${n.logo ? `<img src="${esc(n.logo)}" alt="" onerror="this.parentNode.textContent='${esc(n.mark)}'">` : esc(n.mark)}</div><h3>${esc(n.name)}</h3><p>${esc(n.role)}</p></article>`).join('');
+      <div class="mark">${n.logo ? `<img src="${esc(n.logo)}" alt="" onerror="this.parentNode.textContent='${esc(n.mark)}'">` : esc(n.mark)}</div><h3>${esc(n.name)}</h3></article>`).join('');
   $('#cycle').innerHTML = (D.mouCycle || []).map((s, i) => `<article class="step reveal" style="--d:${i * 70}ms"><span class="num">${esc(s.n)}</span><h3>${esc(s.title)}</h3><p>${esc(s.text)}</p></article>`).join('');
 
   /* ----- colleges ----- */

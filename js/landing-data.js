@@ -93,10 +93,7 @@ window.HH_SITE = {
     { name: 'Social Justice Department', role: 'Runs welfare homes', mark: 'SJD', logo: 'assets/logos/sjd.png' },
     { name: 'Department of Women and Child Development', role: 'Runs welfare homes', mark: 'WCD', logo: 'assets/logos/wcd.png' },
     { name: 'DCIP Kozhikode', role: 'Programme lead and coordination', mark: 'DCIP', logo: 'assets/dcip-logo.png' },
-    { name: 'District Administration, Kozhikode', role: 'Nammude Kozhikode Initiative', mark: 'DA', logo: 'assets/district-logo.png' },
-    { name: 'Sat Kriya Architects', role: 'Design partner for infrastructure', mark: 'SK' },
-    { name: 'District Nirmiti Kendra', role: 'Design and construction support', mark: 'DNK' },
-    { name: 'Indian Institute of Architects', role: 'Design partner for infrastructure', mark: 'IIA' }
+    { name: 'District Administration, Kozhikode', mark: 'DA', logo: 'assets/district-logo.png' }
   ],
   mouCycle: [
     { n: '1', title: 'Action plans', text: 'Each college shares its yearly plan.' },
