@@ -3,19 +3,184 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Happy Hill Tracker</title>
+<title>Happy Hill | Welfare homes as places of growth, connection and care</title>
+<meta name="description" content="Happy Hill is DCIP Kozhikode's welfare home initiative: partner colleges, expert institutions and the District Administration working with the Social Justice and Women and Child Development departments to restore dignity and build connection for residents of government welfare homes.">
+<meta property="og:title" content="Happy Hill | DCIP Kozhikode">
+<meta property="og:description" content="Making government welfare homes places of growth, connection and care.">
+<meta property="og:image" content="assets/happy-hill-logo.png">
+<meta name="theme-color" content="#1f6b33">
 <link rel="icon" href="assets/happy-hill-logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/landing.css">
 </head>
 <body>
-<div id="app"></div>
-<div id="modal-root"></div>
-<div id="toast"></div>
-<script src="js/config.js"></script>
-<script src="js/data.js"></script>
-<script src="js/app.js"></script>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="nav" id="top">
+  <div class="wrap nav-in">
+    <a class="brand" href="#top" aria-label="Happy Hill home"><img src="assets/happy-hill-logo.png" alt="Happy Hill"></a>
+    <nav id="menu" aria-label="Main">
+      <a href="#about">About</a>
+      <a href="#approach">Approach</a>
+      <a href="#milestones">Milestones</a>
+      <a href="#partners">Partners</a>
+      <a href="#activities">Activities</a>
+      <a href="#events">Events</a>
+      <a href="#reports">Reports</a>
+      <a href="#contact">Contact</a>
+    </nav>
+    <a class="btn btn-solid" href="portal.html">Sign in to the tracker</a>
+    <button class="burger" id="burger" aria-label="Open menu" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<main id="main">
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap hero-in">
+      <div class="hero-copy">
+        <p class="eyebrow">A welfare home initiative of DCIP Kozhikode</p>
+        <h1>Welfare homes should be places of <em>growth</em>, <em>connection</em> and <em>care</em>.</h1>
+        <p class="lead">Happy Hill works with the people who live in Government welfare homes across Kozhikode to restore dignity, build belonging and close the distance between what these homes are and what they should be.</p>
+        <div class="cta">
+          <a class="btn btn-sun" href="#about">Explore the project</a>
+          <a class="btn btn-ghost" href="#events">See upcoming events</a>
+        </div>
+        <div class="hero-logos" aria-label="In association with">
+          <span>In association with</span>
+          <img src="assets/dcip-logo.png" alt="DCIP Kozhikode" onerror="this.remove()">
+          <img src="assets/district-logo.png" alt="District Administration, Kozhikode">
+        </div>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="orb o1"></div><div class="orb o2"></div>
+        <img class="hero-logo" src="assets/happy-hill-logo.png" alt="">
+        <div class="chip c1"><b>Partner colleges</b><span>one for every home</span></div>
+        <div class="chip c2"><b>Expert institutions</b><span>sustained engagement</span></div>
+        <div class="chip c3"><b>District Administration</b><span>documents &amp; schemes</span></div>
+      </div>
+    </div>
+    <div class="wrap"><div class="stats" id="stats"></div></div>
+  </section>
+
+  <!-- ABOUT -->
+  <section class="sec" id="about">
+    <div class="wrap two">
+      <div class="reveal">
+        <p class="kicker">About the project</p>
+        <h2>The idea behind the name</h2>
+        <p>A welfare home is rarely associated with happiness. <strong>Happy Hill</strong> is an intention: that these spaces should be places of growth, stimulation, connection and care, and not merely institutional management.</p>
+        <p>The project is implemented by DCIP Kozhikode together with the <strong>Social Justice Department (SJD)</strong> and the <strong>Department of Women and Child Development (WCD)</strong>, which administer the six welfare homes covered under the programme.</p>
+        <p>Its work is to help close the distance between what these homes are, and what they should be, for the people who live in them.</p>
+      </div>
+      <div class="reveal quote-card">
+        <div class="qmark">&ldquo;</div>
+        <p class="q">The core problem in welfare homes is not resource scarcity alone. <b>It is social exclusion.</b></p>
+        <p class="qs">Happy Hill answers it with a structured partnership model: partner colleges, expert institutions, and DCIP&rsquo;s administrative access.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- APPROACH -->
+  <section class="sec tint" id="approach">
+    <div class="wrap">
+      <div class="head reveal"><p class="kicker">Our approach</p><h2>A structured partnership model</h2><p class="sub">Three things work together so that support is steady and not occasional.</p></div>
+      <div class="grid g3" id="pillars"></div>
+      <div class="head reveal" style="margin-top:56px"><p class="kicker">In the homes</p><h2>What residents can expect</h2></div>
+      <div class="grid g3" id="programmes"></div>
+    </div>
+  </section>
+
+  <!-- MILESTONES -->
+  <section class="sec" id="milestones">
+    <div class="wrap">
+      <div class="head reveal"><p class="kicker">Key milestones</p><h2>Where the project stands</h2><p class="sub">From the partnership model to better spaces for residents.</p></div>
+      <ol class="timeline" id="timeline"></ol>
+    </div>
+  </section>
+
+  <!-- PARTNERS -->
+  <section class="sec tint" id="partners">
+    <div class="wrap">
+      <div class="head reveal"><p class="kicker">Institutions</p><h2>Who makes it happen</h2><p class="sub">Government departments, the District Administration and design partners.</p></div>
+      <div class="grid g4" id="institutions"></div>
+      <div class="head reveal" style="margin-top:56px"><p class="kicker">Colleges in collaboration</p><h2>One college for every home</h2><p class="sub">Each partner college is assigned to a welfare home through an annual MoU.</p></div>
+      <div class="grid g3" id="colleges"></div>
+    </div>
+  </section>
+
+  <!-- ACTIVITIES -->
+  <section class="sec" id="activities">
+    <div class="wrap">
+      <div class="head row reveal"><div><p class="kicker">Recent activities</p><h2>What has been happening</h2></div><a class="link" href="portal.html">Full activity tracker &rsaquo;</a></div>
+      <div class="grid g3" id="activity-cards"></div>
+    </div>
+  </section>
+
+  <!-- EVENTS -->
+  <section class="sec tint" id="events">
+    <div class="wrap">
+      <div class="head reveal"><p class="kicker">Upcoming events</p><h2>Coming up</h2><p class="sub">Open to partner colleges, welfare homes and the District team.</p></div>
+      <div class="grid g3" id="event-cards"></div>
+    </div>
+  </section>
+
+  <!-- REPORTS -->
+  <section class="sec" id="reports">
+    <div class="wrap">
+      <div class="head reveal"><p class="kicker">Reports and documents</p><h2>Read and download</h2></div>
+      <div class="grid g2" id="report-cards"></div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="band">
+    <div class="wrap band-in">
+      <div><h2>Part of the Happy Hill team?</h2><p>Coordinators, welfare home staff and the District team use the tracker to plan activities, raise and attend requests, and follow progress.</p></div>
+      <a class="btn btn-sun" href="portal.html">Sign in to the tracker</a>
+    </div>
+  </section>
+</main>
+
+<footer class="foot" id="contact">
+  <div class="wrap foot-in">
+    <div class="f1">
+      <img class="flogo" src="assets/happy-hill-logo.png" alt="Happy Hill">
+      <p>Happy Hill is the welfare home initiative of DCIP Kozhikode, part of the Nammude Kozhikode Initiative of the District Administration.</p>
+      <div class="flogos"><img src="assets/dcip-logo.png" alt="DCIP Kozhikode" onerror="this.remove()"><img src="assets/district-logo.png" alt="District Administration, Kozhikode"></div>
+    </div>
+    <div>
+      <h3>Explore</h3>
+      <ul>
+        <li><a href="#about">About the project</a></li>
+        <li><a href="#approach">Our approach</a></li>
+        <li><a href="#milestones">Milestones</a></li>
+        <li><a href="#partners">Partners</a></li>
+        <li><a href="#activities">Activities</a></li>
+        <li><a href="#events">Events</a></li>
+        <li><a href="#reports">Reports</a></li>
+        <li><a href="portal.html">Tracker sign in</a></li>
+      </ul>
+    </div>
+    <div>
+      <h3>Contact</h3>
+      <address id="contact-box"></address>
+    </div>
+    <div>
+      <h3>In association with</h3>
+      <ul>
+        <li>Social Justice Department</li>
+        <li>Department of Women and Child Development</li>
+        <li>District Administration, Kozhikode</li>
+      </ul>
+    </div>
+  </div>
+  <div class="wrap foot-bar"><span>&copy; <span id="yr">2026</span> DCIP Kozhikode, District Administration. All rights reserved.</span><span>Photographs are shared with consent. Residents&rsquo; names and details are never published.</span></div>
+</footer>
+
+<script src="js/landing-data.js"></script>
+<script src="js/landing.js"></script>
 </body>
 </html>

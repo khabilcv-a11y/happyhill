@@ -146,7 +146,7 @@
     const who = S.user.role === 'college' ? college(S.user.collegeId).name : S.user.role === 'home' ? home(S.user.homeId).name : 'District Administration, Kozhikode';
     return `<div class="shell">
       <aside class="sidebar ${S.menu ? 'open' : ''}">
-        <div class="brand"><img class="logo-img" src="assets/happy-hill-logo.png" alt="Happy Hill"></div>
+        <div class="brand"><a href="index.html" title="Back to the Happy Hill home page"><img class="logo-img" src="assets/happy-hill-logo.png" alt="Happy Hill"></a></div>
         <nav class="nav">${items}</nav>
         <div class="side-foot">
           <div class="side-logos">${LOGO_DCIP}<img src="assets/district-logo.png" alt="District Administration Kozhikode"></div>
@@ -185,6 +185,7 @@
         <div class="small" style="opacity:.8;position:relative;z-index:1">Nammude Kozhikode Initiative · DCIP internship programme</div>
       </section>
       <section class="login-form">
+        <a class="back-home" href="index.html">‹ Back to the Happy Hill home page</a>
         <img class="logo-img logo" src="assets/happy-hill-logo.png" alt="Happy Hill">
         <h2 style="font-size:22px">Sign in</h2>
         <p class="muted" style="margin:4px 0 16px">Use your authorised account to continue.</p>

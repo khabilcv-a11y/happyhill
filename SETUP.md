@@ -47,3 +47,10 @@ Sample accounts (password for all: `NK@12345`):
 
 ## Why the portal must be connected to the sheet
 Until `API_URL` is set in `js/config.js`, the portal runs in **preview mode**: sample data is saved only in the browser of the device being used, so nothing is shared between colleges, homes and the District. Once connected, everything an activity, follow-up or request records is stored in the sheet and every login sees what its role is allowed to see.
+
+## Editing the home page
+The public home page is `index.html`; the tracker sign-in is `portal.html`. All the words, dates, colleges, events and reports on the home page come from **`js/landing-data.js`**, so you only edit that file.
+- Items marked `sample: true` are placeholders and show a small "Sample" tag. Replace them with real entries, then set `SHOW_SAMPLE_TAGS: false`.
+- **Photos:** put images in `assets/gallery/` and set `image: 'assets/gallery/name.jpg'` on an activity or event. Use only photographs taken with consent, and never show residents' names or identifiable faces.
+- **Reports:** set `file: 'assets/reports/name.pdf'` (or a link) and the card turns into a Download button.
+- **Events and activities:** use `date: '2026-12-04'` for real entries.
