@@ -82,7 +82,7 @@ window.HH_SITE = {
 
   /* ---------- looking ahead ---------- */
   ahead: [
-    { kicker: 'Identity', title: 'Aadhaar and UDID', text: 'Camps and follow-up so every resident has legal identity.', art: 'docs' },
+    { kicker: 'Identity', title: 'Aadhaar and UDID', text: 'Camps and follow-up so every resident has legal identity.', image: 'assets/photos/aadhaar-camp-2.jpg', pos: '50% 45%' },
     { kicker: 'Livelihood', title: 'Asha Craft', text: 'A kiosk, brand and Instagram page for residents’ handmade products.', image: 'assets/photos/craft-dolls.jpg', link: { href: 'https://www.instagram.com/asha.craftedwithhope/', label: '@asha.craftedwithhope' } },
     { kicker: 'Recreation', title: 'Lensfed Park', text: 'A safe, accessible park through CSR support.', image: 'assets/photos/park-vision.jpg', pos: '50% 50%' },
     { kicker: 'Learning', title: 'DREAMS sessions', text: 'Age-appropriate sessions, with visits to NIT, the Planetarium and the Employment Exchange.', logo: 'assets/logos/dreams.png' }
@@ -121,8 +121,8 @@ window.HH_SITE = {
     { image: 'assets/photos/mou-holycross.jpg', pos: '50% 45%', title: 'Partner colleges honoured', text: 'Awards presented by Dr. R. Bindu, then Minister for Higher Education and Social Justice.', tag: 'Awards' },
     { image: 'assets/photos/group-collectorate.jpg', pos: '50% 72%', title: 'Together at the Collectorate', text: 'Students, coordinators and officials.', tag: 'Gathering' },
     { image: 'assets/photos/dreams-lamp.jpg', pos: '50% 55%', title: 'Lighting the lamp', text: 'Opening the DREAMS launch.', tag: 'Launch', date: '2026-02-03' },
-    { art: 'learn', title: 'Books for the After Care Home', text: 'A community call to build a library.', tag: 'Drive' },
-    { art: 'build', title: 'Refreshing the Home for the Elderly', text: 'Rooms revamped with Happy Hill support.', tag: 'Spaces' }
+    { image: 'assets/photos/library-girls-home.jpg', pos: '60% 40%', title: 'Library set up at the Girls’ Home', text: 'A new reading corner, opened with the Happy Hill team.', tag: 'Library' },
+    { image: 'assets/photos/aadhaar-camp-2.jpg', pos: '50% 45%', title: 'Aadhaar enrolment camp', text: 'On-site enrolment so residents get legal identity.', tag: 'Identity' }
   ],
 
   // Photographs shown in the "In pictures" slideshow. Only photos taken with consent; no residents' faces.
@@ -135,7 +135,10 @@ window.HH_SITE = {
     { image: 'assets/photos/mou-ihrd.jpg', alt: 'A partner college receiving its award' },
     { image: 'assets/photos/tree-planting-2.jpg', alt: 'Tree planting under the Happy Hill banner' },
     { image: 'assets/photos/group-collectorate.jpg', alt: 'A group photograph at the Collectorate' },
-    { image: 'assets/photos/mou-malabar.jpg', alt: 'A partner college honoured at the award ceremony' }
+    { image: 'assets/photos/mou-malabar.jpg', alt: 'A partner college honoured at the award ceremony' },
+    { image: 'assets/photos/aadhaar-camp-2.jpg', alt: 'An Aadhaar enrolment camp at a welfare home' },
+    { image: 'assets/photos/library-girls-home.jpg', alt: 'Opening the library at the Girls’ Home' },
+    { image: 'assets/photos/aadhaar-camp-1.jpg', alt: 'Staff helping with Aadhaar enrolment' }
   ],
 
   // Reports and documents. While this list is empty the whole section is hidden from the page.
