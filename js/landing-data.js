@@ -59,14 +59,13 @@ window.HH_SITE = {
     { name: 'Indian Institute of Architects', role: 'Design partner for infrastructure', mark: 'IIA' }
   ],
 
-  // One entry per partner college. Names and homes are read from the slides shown at the MoU ceremony; please confirm them.
+  // One entry per partner college. The sixth college will be added here once its name is confirmed.
   colleges: [
     { name: 'IHRD College of Applied Science', home: 'Asha Bhavan', image: 'assets/photos/mou-ihrd.jpg', pos: '50% 42%' },
     { name: 'St. Joseph’s College (Autonomous), Devagiri', home: 'Old Age Home', image: 'assets/photos/mou-stjoseph.jpg', pos: '50% 42%' },
-    { name: 'Providence Women’s College (Autonomous)', home: 'Welfare home (name to be confirmed)', image: 'assets/photos/mou-providence.jpg', pos: '50% 40%', sample: true },
+    { name: 'Providence Women’s College (Autonomous)', home: 'Welfare home', image: 'assets/photos/mou-providence.jpg', pos: '50% 40%' },
     { name: 'Holy Cross Institute of Management and Technology', home: 'Asha Bhavan (Women)', image: 'assets/photos/mou-holycross.jpg', pos: '50% 45%' },
-    { name: 'Malabar Christian College', home: 'Old Age Home', image: 'assets/photos/mou-malabar.jpg', pos: '50% 42%' },
-    { name: 'Partner college (name to be confirmed)', home: 'Welfare home (name to be confirmed)', image: 'assets/photos/mou-sixth.jpg', pos: '50% 42%', sample: true }
+    { name: 'Malabar Christian College', home: 'Old Age Home', image: 'assets/photos/mou-malabar.jpg', pos: '50% 42%' }
   ],
 
   // Use  date: '2026-11-05'  for a dated card, or  label: 'text'  to show words instead of a date.

@@ -225,3 +225,9 @@ html.js .reveal.in{opacity:1;transform:none}
 .slide .bg{position:absolute;inset:-40px;background-size:cover;background-position:center;filter:blur(28px) saturate(1.15);opacity:.9}
 .slide img{position:relative;width:100%;height:100%;object-fit:contain;object-position:center;display:block}
 @media(prefers-reduced-motion:reduce){.track{transition:none}}
+
+/* an odd number of colleges stays centred */
+.grid.centered{display:flex;flex-wrap:wrap;justify-content:center}
+.grid.centered>.card{flex:0 1 calc((100% - 44px)/3)}
+@media(max-width:1000px){.grid.centered>.card{flex-basis:calc((100% - 22px)/2)}}
+@media(max-width:640px){.grid.centered>.card{flex-basis:100%}}
