@@ -51,11 +51,11 @@
   const list = (arr, cls) => `<ul class="${cls || 'ticks'}">${(arr || []).map(t => `<li>${ico('check', 'ic')}<span>${esc(t)}</span></li>`).join('')}</ul>`;
 
   /* ----- stats ----- */
-  $('#stats').innerHTML = (D.stats || []).map((s, i) => `<div class="stat" style="--i:${i}"><div class="sico">${ico(s.icon || 'check')}</div><div class="stxt"><b data-n="${esc(s.n)}">0</b><span>${esc(s.l)}</span></div></div>`).join('');
+  $('#stats').innerHTML = (D.stats || []).map((s, i) => `<div class="stat" style="--i:${i}"><div class="sico">${ico(s.icon || 'check')}</div><div class="stxt"><b data-n="${esc(s.n)}">${esc(s.n)}</b><span>${esc(s.l)}</span></div></div>`).join('');
   document.querySelectorAll('#stats b').forEach(el => {          // count up from zero when the page opens
     const n = +el.dataset.n, still = matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (still || !n) { el.textContent = el.dataset.n; return; }
-    const t0 = performance.now() + 500, run = now => { const p = Math.min(1, Math.max(0, (now - t0) / 1400)), e = 1 - Math.pow(1 - p, 3); el.textContent = Math.round(n * e); if (p < 1) requestAnimationFrame(run); };
+    let started = false; const t0 = performance.now() + 500, run = now => { if (!started) { started = true; el.textContent = '0'; } const p = Math.min(1, Math.max(0, (now - t0) / 1400)), e = 1 - Math.pow(1 - p, 3); el.textContent = Math.round(n * e); if (p < 1) requestAnimationFrame(run); };
     requestAnimationFrame(run);
   });
 

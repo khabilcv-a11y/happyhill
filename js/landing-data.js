@@ -88,10 +88,10 @@ window.HH_SITE = {
 
   /* ---------- institutions and partners ---------- */
   institutions: [
+    { name: 'District Administration, Kozhikode', mark: 'DA', logo: 'assets/district-logo.png' },
     { name: 'Social Justice Department', role: 'Runs welfare homes', mark: 'SJD', logo: 'assets/logos/sjd.png' },
     { name: 'Department of Women and Child Development', role: 'Runs welfare homes', mark: 'WCD', logo: 'assets/logos/wcd.png' },
-    { name: 'DCIP Kozhikode', role: 'Programme lead and coordination', mark: 'DCIP', logo: 'assets/dcip-logo.png' },
-    { name: 'District Administration, Kozhikode', mark: 'DA', logo: 'assets/district-logo.png' }
+    { name: 'DCIP Kozhikode', role: 'Programme lead and coordination', mark: 'DCIP', logo: 'assets/dcip-logo.png' }
   ],
   mouCycle: [
     { n: '1', title: 'Action plans', text: 'Each college shares its yearly plan.' },
