@@ -44,7 +44,7 @@ img,svg{max-width:100%}
 .burger span{display:block;width:20px;height:2px;background:var(--forest);border-radius:2px}
 
 /* hero */
-.hero{position:relative;color:#fff;background:linear-gradient(125deg,var(--deep) 0%,var(--forest) 45%,#4aa84e 100%);padding:70px 0 0}
+.hero{position:relative;color:#fff;background:linear-gradient(125deg,var(--deep) 0%,var(--forest) 45%,#4aa84e 100%);padding:70px 0 64px}
 .hero::before,.hero::after{content:"";position:absolute;border-radius:50%;pointer-events:none}
 .hero::before{width:520px;height:520px;right:-160px;top:-200px;background:rgba(246,201,69,.28)}
 .hero::after{width:380px;height:380px;left:-140px;bottom:20px;background:rgba(255,255,255,.07)}
@@ -65,14 +65,13 @@ img,svg{max-width:100%}
 .chip b{font-size:14px}.chip span{font-size:12px;color:var(--muted)}
 .c1{right:6px;top:8px}.c2{left:0;top:236px;animation-delay:-2s}.c3{left:0;bottom:34px;animation-delay:-4s}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
-.stats{position:relative;z-index:3;display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:-56px}
-.stat{background:#fff;color:var(--ink);border-radius:20px;padding:20px 22px;box-shadow:var(--shadow-lg);display:flex;flex-direction:column;gap:4px}
-.stat b{font-family:Poppins;font-size:38px;font-weight:600;line-height:1;color:var(--forest)}
-.stat span{font-size:13.5px;color:var(--muted);line-height:1.4}
+.stats{position:relative;z-index:3;display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:8px}
+.stat{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.26);backdrop-filter:blur(8px);color:#fff;border-radius:20px;padding:20px 22px;display:flex;flex-direction:column;gap:6px}
+.stat b{font-family:Poppins;font-size:40px;font-weight:600;line-height:1;color:var(--sun)}
+.stat span{font-size:14px;color:rgba(255,255,255,.9);line-height:1.4}
 
 /* sections */
 .sec{padding:96px 0}
-#about{padding-top:150px}
 .tint{background:var(--green-50)}
 .head{margin-bottom:38px;max-width:680px}
 .head.row{max-width:none;display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap}
@@ -190,7 +189,6 @@ html.js .reveal.in{opacity:1;transform:none}
 }
 @media(max-width:640px){
   .sec{padding:68px 0}
-  #about{padding-top:120px}
   .wrap{width:min(1180px,100% - 36px)}
   .g2,.g3,.g4{grid-template-columns:1fr}
   .stats{grid-template-columns:1fr 1fr;gap:10px}
