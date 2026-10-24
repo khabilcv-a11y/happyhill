@@ -55,6 +55,12 @@
   $('#pillars').innerHTML = (D.pillars || []).map((p, i) => `<article class="card pillar reveal" style="--d:${i * 80}ms"><div class="ico">${ico(p.icon)}</div><h3>${esc(p.title)}</h3><p>${esc(p.text)}</p></article>`).join('');
   $('#programmes').innerHTML = (D.programmes || []).map((p, i) => `<article class="card prog reveal" style="--d:${i * 60}ms"><div class="ico sm">${ico(p.icon)}</div><div><h3>${esc(p.title)}</h3><p>${esc(p.text)}</p></div></article>`).join('');
 
+  /* ----- the welfare homes ----- */
+  const H = D.homes || {};
+  $('#homes-intro').textContent = H.intro || '';
+  $('#home-list').innerHTML = (H.types || []).map(t => `<li>${ico('build', 'ic')}<span>${esc(t)}</span></li>`).join('');
+  $('#home-mosaic').innerHTML = (H.photos || []).map((p, i) => `<figure class="mo reveal" style="--d:${i * 70}ms"><img src="${esc(p.image)}" alt="${esc(p.alt)}" loading="lazy"></figure>`).join('');
+
   /* ----- milestones ----- */
   const ST = { done: ['Done', 'done'], now: ['In progress', 'now'], next: ['Coming up', 'next'] };
   $('#timeline').innerHTML = (D.milestones || []).map((m, i) => {

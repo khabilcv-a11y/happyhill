@@ -108,8 +108,8 @@ h2{font-size:clamp(28px,3.6vw,40px);font-weight:600}
 .pill.done{background:var(--green-100);color:var(--forest)}.pill.now{background:#e6f1fc;color:var(--blue)}.pill.next{background:var(--sun-bg);color:#8a6410}
 .sample{position:absolute;top:12px;right:12px;background:var(--sun-bg);color:#8a6410;font-size:11px;font-weight:600;padding:2px 9px;border-radius:999px;z-index:2}
 .inst{text-align:center}
-.mark{width:84px;height:84px;margin:0 auto 16px;border-radius:22px;background:var(--green-50);border:1px solid var(--line);display:grid;place-items:center;font-family:Poppins;font-weight:600;font-size:20px;color:var(--forest);overflow:hidden}
-.mark img{width:100%;height:100%;object-fit:contain;padding:8px}
+.mark{width:96px;height:96px;margin:0 auto 16px;border-radius:22px;background:var(--green-50);border:1px solid var(--line);display:grid;place-items:center;font-family:Poppins;font-weight:600;font-size:20px;color:var(--forest);overflow:hidden}
+.mark img{width:100%;height:100%;object-fit:contain;padding:10px}
 .inst h3{font-size:16px}
 
 /* timeline */
@@ -229,3 +229,16 @@ html.js .reveal.in{opacity:1;transform:none}
 .grid.centered>.card{flex:0 1 calc((100% - 44px)/3)}
 @media(max-width:1000px){.grid.centered>.card{flex-basis:calc((100% - 22px)/2)}}
 @media(max-width:640px){.grid.centered>.card{flex-basis:100%}}
+
+/* the welfare homes */
+.homelist{list-style:none;margin:22px 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.homelist li{display:flex;align-items:center;gap:12px;background:var(--green-50);border:1px solid var(--line);border-radius:16px;padding:12px 14px;font-weight:500;font-size:15px;color:var(--ink);line-height:1.35}
+.homelist .ic{color:var(--brand);width:24px;height:24px}
+.mosaic{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-content:center}
+.mo{margin:0;border-radius:22px;overflow:hidden;box-shadow:var(--shadow);aspect-ratio:16/10;background:var(--green-100)}
+.mo img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s var(--ease)}
+.mo:hover img{transform:scale(1.06)}
+.mo:nth-child(even){transform:translateY(22px)}
+html.js .mo.reveal.in:nth-child(even){transform:translateY(22px)}
+@media(max-width:1000px){.mo:nth-child(even),html.js .mo.reveal.in:nth-child(even){transform:none}}
+@media(max-width:640px){.homelist{grid-template-columns:1fr}.mosaic{gap:10px}}

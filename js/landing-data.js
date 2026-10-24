@@ -50,14 +50,28 @@ window.HH_SITE = {
   ],
 
   institutions: [
-    { name: 'Social Justice Department', role: 'Administers welfare homes', mark: 'SJD' },
-    { name: 'Department of Women and Child Development', role: 'Administers welfare homes', mark: 'WCD' },
+    { name: 'Social Justice Department', role: 'Administers welfare homes', mark: 'SJD', logo: 'assets/logos/sjd.png' },
+    { name: 'Department of Women and Child Development', role: 'Administers welfare homes', mark: 'WCD', logo: 'assets/logos/wcd.png' },
     { name: 'DCIP Kozhikode', role: 'Programme lead and coordination', mark: 'DCIP', logo: 'assets/dcip-logo.png' },
     { name: 'District Administration, Kozhikode', role: 'Nammude Kozhikode Initiative', mark: 'DA', logo: 'assets/district-logo.png' },
     { name: 'Sat Kriya Architects', role: 'Design partner for infrastructure', mark: 'SK' },
     { name: 'District Nirmiti Kendra', role: 'Design and construction support', mark: 'DNK' },
     { name: 'Indian Institute of Architects', role: 'Design partner for infrastructure', mark: 'IIA' }
   ],
+
+  // The welfare homes in the programme (names as in the DCIP presentation) and photographs of the buildings.
+  homes: {
+    intro: 'Happy Hill works with the government welfare homes of Kozhikode, run by the Social Justice Department and the Department of Women and Child Development.',
+    types: ['Children\u2019s Home for Boys', 'Children\u2019s Home for Girls', 'Home for Mentally Deficient Children', 'Government Home for the Elderly', 'Asha Bhavan', 'Mahila Mandiram'],
+    photos: [
+      { image: 'assets/photos/home-orange.jpg', alt: 'A government welfare home in Kozhikode' },
+      { image: 'assets/photos/home-asha-male.jpg', alt: 'Government Asha Bhavan' },
+      { image: 'assets/photos/home-mahila.jpg', alt: 'Government Mahila Mandiram, Kozhikode' },
+      { image: 'assets/photos/home-green.jpg', alt: 'A government welfare home in Kozhikode' },
+      { image: 'assets/photos/home-plain.jpg', alt: 'A government welfare home in Kozhikode' },
+      { image: 'assets/photos/home-asha-long.jpg', alt: 'A government welfare home in Kozhikode' }
+    ]
+  },
 
   // One entry per partner college. The sixth college will be added here once its name is confirmed.
   colleges: [
