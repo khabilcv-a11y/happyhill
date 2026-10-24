@@ -20,9 +20,7 @@ window.HH_SITE = {
 
   stats: [
     { n: '8', l: 'Government welfare homes' },
-    { n: '7', l: 'Partner colleges' },
-    { n: '2', l: 'Departments: SJD and WCD' },
-    { n: '1', l: 'Shared tracker' }
+    { n: '7', l: 'Partner colleges' }
   ],
 
   /* ---------- the challenge ---------- */
@@ -104,13 +102,13 @@ window.HH_SITE = {
 
   // One entry per partner college. Photos are from the award ceremony; homes follow the DCIP presentation.
   colleges: [
-    { name: 'IHRD College of Applied Science', homes: ['Asha Bhavan for Men'], image: 'assets/photos/mou-ihrd.jpg', pos: '50% 42%' },
-    { name: 'St. Joseph’s College (Autonomous), Devagiri', homes: ['Asha Bhavan for Women'], image: 'assets/photos/mou-stjoseph.jpg', pos: '50% 42%' },
-    { name: 'Providence Women’s College (Autonomous)', homes: ['Children’s Home for Girls'], image: 'assets/photos/mou-providence.jpg', pos: '50% 40%' },
-    { name: 'Holy Cross Institute of Management and Technology', homes: ['Mahila Mandiram', 'After Care Home for Girls'], image: 'assets/photos/mou-holycross.jpg', pos: '50% 45%' },
-    { name: 'Malabar Christian College', homes: ['Government Home for the Elderly'], image: 'assets/photos/mou-malabar.jpg', pos: '50% 42%' },
-    { name: 'JDT Islam College of Arts and Science', homes: ['Children’s Home for Boys'], image: 'assets/photos/mou-sixth.jpg', pos: '50% 42%' },
-    { name: 'Farook Training College', homes: ['Home for Mentally Deficient Children'], art: 'learn' }
+    { name: 'IHRD College of Applied Science', logo: 'assets/logos/colleges/ihrd.png', homes: ['Asha Bhavan for Men'], image: 'assets/photos/mou-ihrd.jpg', pos: '50% 42%' },
+    { name: 'St. Joseph’s College (Autonomous), Devagiri', logo: 'assets/logos/colleges/devagiri.png', homes: ['Asha Bhavan for Women'], image: 'assets/photos/mou-stjoseph.jpg', pos: '50% 42%' },
+    { name: 'Providence Women’s College (Autonomous)', logo: 'assets/logos/colleges/providence.png', homes: ['Children’s Home for Girls'], image: 'assets/photos/mou-providence.jpg', pos: '50% 40%' },
+    { name: 'Holy Cross Institute of Management and Technology', logo: 'assets/logos/colleges/holycross.png', homes: ['Mahila Mandiram', 'After Care Home for Girls'], image: 'assets/photos/mou-holycross.jpg', pos: '50% 45%' },
+    { name: 'Malabar Christian College', logo: 'assets/logos/colleges/mcc.png', homes: ['Government Home for the Elderly'], image: 'assets/photos/mou-malabar.jpg', pos: '50% 42%' },
+    { name: 'JDT Islam College of Arts and Science', logo: 'assets/logos/colleges/jdt.png', homes: ['Children’s Home for Boys'], image: 'assets/photos/mou-sixth.jpg', pos: '50% 42%' },
+    { name: 'Farook Training College', logo: 'assets/logos/colleges/farook.png', homes: ['Home for Mentally Deficient Children'], art: 'learn' }
   ],
 
   // Use  date: '2026-11-05'  for a dated card, or  label: 'text'  to show words instead of a date.

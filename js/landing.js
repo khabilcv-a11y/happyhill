@@ -86,8 +86,8 @@
 
   /* ----- colleges ----- */
   $('#colleges').innerHTML = (D.colleges || []).map((c, i) => `<article class="card colc reveal" style="--d:${i * 50}ms">
-      <div class="thumb sq">${c.image ? photo(c.image, c.name + ' receiving its award', c.pos || '50% 38%') : art(c.art || 'college')}</div>
-      <div class="body"><div class="ico sm">${ico('college')}</div><div><h3>${esc(c.name)}</h3>${(c.homes || []).map(h => `<p>${ico('link', 'ic xs')} ${esc(h)}</p>`).join('')}${c.image ? '<span class="pill soft">Award ceremony</span>' : '<span class="pill soft">Partner college</span>'}</div></div></article>`).join('');
+      <div class="thumb sq ${!c.image && c.logo ? 'logoonly' : ''}">${c.image ? photo(c.image, c.name + ' receiving its award', c.pos || '50% 38%') : c.logo ? `<img class="bigl" src="${esc(c.logo)}" alt="${esc(c.name)} logo" loading="lazy">` : art(c.art || 'college')}</div>
+      <div class="body">${c.logo && c.image ? `<div class="clogo"><img src="${esc(c.logo)}" alt="${esc(c.name)} logo" loading="lazy"></div>` : ''}<div class="cinfo"><h3>${esc(c.name)}</h3>${(c.homes || []).map(h => `<p>${ico('link', 'ic xs')} ${esc(h)}</p>`).join('')}${c.image ? '<span class="pill soft">Award ceremony</span>' : '<span class="pill soft">Partner college</span>'}</div></div></article>`).join('');
 
   /* ----- activities ----- */
   $('#activity-cards').innerHTML = (D.activities || []).map((a, i) => `<article class="card act reveal" style="--d:${(i % 3) * 60}ms">

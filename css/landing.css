@@ -309,3 +309,13 @@ html.js .mo.reveal.in:nth-child(even){transform:translateY(22px)}
 .nx h3{font-size:17px;margin-bottom:6px}
 .nx p:not(.kicker){font-size:14.5px;margin:0 0 8px}
 .link.sm{font-size:13.5px}
+.stats{grid-template-columns:repeat(2,minmax(0,300px));justify-content:center}
+@media(max-width:640px){.stats{grid-template-columns:1fr 1fr}}
+
+/* college cards: the college's own logo on top, details below */
+.colc .body{display:block;padding:18px 22px 24px}
+.clogo{height:64px;display:flex;align-items:center;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.clogo img{max-height:64px;max-width:230px;width:auto;height:auto;object-fit:contain;display:block}
+.cinfo{min-width:0}
+.thumb.logoonly{background:#fff;display:grid;place-items:center;border-bottom:1px solid var(--line)}
+.thumb.logoonly .bigl{width:auto;height:auto;max-width:56%;max-height:62%;object-fit:contain}
