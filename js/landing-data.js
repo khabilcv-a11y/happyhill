@@ -91,13 +91,10 @@ window.HH_SITE = {
     { image: 'assets/photos/mou-malabar.jpg', alt: 'A partner college and welfare home presented on screen' }
   ],
 
-  // file: path or link to a PDF. Leave empty to show "Available soon".
-  reports: [
-    { title: 'Project brief', kind: 'Overview', text: 'What Happy Hill is, how it works and who is involved.', file: '', sample: true },
-    { title: 'Quarterly progress report', kind: 'Report', text: 'Activities completed, follow-ups and key observations for the quarter.', file: '', sample: true },
-    { title: 'MoU summary', kind: 'Partnerships', text: 'Partner colleges, welfare homes and MoU validity.', file: '', sample: true },
-    { title: 'Tracker user guide', kind: 'Guide', text: 'How colleges, homes and the District use the Happy Hill Tracker.', file: '', sample: true }
-  ],
+  // Reports and documents. While this list is empty the whole section is hidden from the page.
+  // To publish one, add an entry such as:
+  //   { title: 'Quarterly progress report', kind: 'Report', text: 'One line about it.', file: 'assets/reports/q1.pdf' }
+  reports: [],
 
   // inDays is for samples. For real events use  date: '2026-12-04'  instead.
   events: [

@@ -107,8 +107,10 @@
       <div class="body"><h3>${esc(e.title)}</h3><p>${ico('pin', 'ic xs')} ${esc(e.where)}</p><p>${ico('college', 'ic xs')} ${esc(e.college)}</p></div></article>`;
   }).join('') || '<p class="muted">No events scheduled right now. Please check back soon.</p>';
 
+  /* ----- reports (the whole section is hidden until there is at least one) ----- */
+  if (!(D.reports || []).length) document.querySelectorAll('#reports, a[href="#reports"]').forEach(el => (el.closest('li') || el).remove());
   /* ----- reports ----- */
-  $('#report-cards').innerHTML = (D.reports || []).map((r, i) => `<article class="card rep reveal" style="--d:${i * 60}ms">
+  if ($('#report-cards')) $('#report-cards').innerHTML = (D.reports || []).map((r, i) => `<article class="card rep reveal" style="--d:${i * 60}ms">
       <div class="ico">${ico('docs')}</div>
       <div class="grow"><span class="pill soft">${esc(r.kind)}</span><h3>${esc(r.title)}</h3><p>${esc(r.text)}</p></div>
       ${r.file ? `<a class="btn btn-line" href="${esc(r.file)}" target="_blank" rel="noopener">${ico('down', 'ic xs')} Download</a>` : `<span class="soon">Available soon</span>`}
