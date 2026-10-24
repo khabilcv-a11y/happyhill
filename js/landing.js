@@ -64,8 +64,7 @@
 
   /* ----- approach ----- */
   $('#steps').innerHTML = (D.steps || []).map((s, i) => `<article class="step reveal" style="--d:${i * 70}ms"><span class="num">${i + 1}</span><h3>${esc(s.title)}</h3><p>${esc(s.text)}</p></article>`).join('');
-  $('#mou-purpose').textContent = (D.mou || {}).purpose || '';
-  $('#mou-resources').textContent = (D.mou || {}).resources || '';
+  if ($('#mou-line')) $('#mou-line').textContent = (D.mou || {}).purpose || '';
   $('#components').innerHTML = (D.components || []).map((p, i) => `<article class="card prog reveal" style="--d:${i * 60}ms"><div class="ico sm">${ico(p.icon)}</div><div><h3>${esc(p.title)}</h3><p>${esc(p.text)}</p></div></article>`).join('');
 
   /* ----- the welfare homes ----- */
@@ -95,10 +94,9 @@
       ${a.link ? `<a class="btn btn-line" href="${esc(a.link.href)}" target="_blank" rel="noopener">${esc(a.link.label)}</a>` : ''}</div></article>`;
   }).join('');
 
-  /* ----- institutions, stakeholders, MoU cycle ----- */
+  /* ----- institutions and MoU cycle ----- */
   $('#institutions').innerHTML = (D.institutions || []).map((n, i) => `<article class="card inst reveal" style="--d:${(i % 4) * 50}ms">
       <div class="mark">${n.logo ? `<img src="${esc(n.logo)}" alt="" onerror="this.parentNode.textContent='${esc(n.mark)}'">` : esc(n.mark)}</div><h3>${esc(n.name)}</h3><p>${esc(n.role)}</p></article>`).join('');
-  $('#stakeholders').innerHTML = (D.stakeholders || []).map(t => `<span class="tag">${esc(t)}</span>`).join('');
   $('#cycle').innerHTML = (D.mouCycle || []).map((s, i) => `<article class="step reveal" style="--d:${i * 70}ms"><span class="num">${esc(s.n)}</span><h3>${esc(s.title)}</h3><p>${esc(s.text)}</p></article>`).join('');
 
   /* ----- colleges ----- */
