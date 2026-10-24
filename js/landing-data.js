@@ -13,7 +13,7 @@ window.HH_SITE = {
   contact: {
     org: 'DCIP Kozhikode',
     line: 'District Collector\u2019s Internship Programme',
-    address: ['Room No. 4035, DCIP Office, Civil Station', 'Kozhikode, Kerala 673020'],
+    address: ['Nammude Kozhikode Mission Room, Room No. 4035, Civil Station', 'Kozhikode, Kerala 673020'],
     phone: '0495 2370200',
     email: 'dcipclt@gmail.com'
   },
@@ -147,6 +147,6 @@ window.HH_SITE = {
   events: [
     { art: 'culture', title: 'Cultural evening at the welfare home', where: 'Welfare home 1', college: 'Partner college 1', inDays: 6, sample: true },
     { art: 'health', title: 'Health awareness camp', where: 'Welfare home 3', college: 'Partner college 3', inDays: 13, sample: true },
-    { art: 'meet', title: 'Quarterly review meeting', where: 'DCIP office, Civil Station', college: 'All partner colleges', inDays: 21, sample: true }
+    { art: 'meet', title: 'Quarterly review meeting', where: 'Nammude Kozhikode Mission Room, Civil Station', college: 'All partner colleges', inDays: 21, sample: true }
   ]
 };
