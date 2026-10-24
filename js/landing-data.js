@@ -19,8 +19,8 @@ window.HH_SITE = {
   },
 
   stats: [
-    { n: '8', l: 'Government welfare homes' },
-    { n: '7', l: 'Partner colleges' }
+    { n: '8', l: 'Government welfare homes', icon: 'build' },
+    { n: '7', l: 'Partner colleges', icon: 'college' }
   ],
 
   /* ---------- the challenge ---------- */
