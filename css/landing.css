@@ -298,3 +298,14 @@ html.js .mo.reveal.in:nth-child(even){transform:translateY(22px)}
 .grid.centered>.card{min-width:0}
 @media(max-width:1000px){.grid.g4.centered>.card{flex-basis:calc((100% - 22px)/2)}}
 @media(max-width:640px){.grid.g4.centered>.card{flex-basis:100%}.colc .pill{white-space:normal}}
+
+/* looking ahead: four compact cards */
+.nx{padding:0;overflow:hidden}
+.nx .thumb{aspect-ratio:16/10}
+.nx .thumb.logo{background:#fff;display:grid;place-items:center}
+.nx .thumb.logo img{width:62%;height:auto;object-fit:contain}
+.nx .body{padding:16px 18px 20px}
+.nx .kicker{font-size:12px;margin-bottom:4px}
+.nx h3{font-size:17px;margin-bottom:6px}
+.nx p:not(.kicker){font-size:14.5px;margin:0 0 8px}
+.link.sm{font-size:13.5px}

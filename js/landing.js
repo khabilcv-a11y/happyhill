@@ -74,25 +74,10 @@
       <div class="thumb">${h.image ? photo(h.image, h.name, h.pos) : art(h.art)}</div>
       <div class="body"><h3>${esc(h.name)}</h3><p class="who">${esc(h.who)}</p><span class="pill soft">${ico('college', 'ic xs')} ${esc(h.college)}</span></div></article>`).join('');
 
-  /* ----- milestones ----- */
-  const ST = { done: ['Done', 'done'], now: ['In progress', 'now'], next: ['Coming up', 'next'] };
-  $('#timeline').innerHTML = (D.milestones || []).map((m, i) => {
-    const s = ST[m.status] || ST.next;
-    return `<li class="tl ${s[1]} reveal" style="--d:${i * 70}ms"><span class="dot">${m.status === 'done' ? ico('check', 'ic') : ''}</span>
-      <div class="tl-card"><div class="tl-top"><span class="pill ${s[1]}">${s[0]}</span>${m.date ? `<span class="muted">${esc(m.date)}</span>` : ''}</div><h3>${esc(m.title)}</h3><p>${esc(m.text)}</p></div></li>`;
-  }).join('');
-
   /* ----- looking ahead ----- */
-  $('#ahead-rows').innerHTML = (D.ahead || []).map((a, i) => {
-    let m = '';
-    if (a.photos) m = `<div class="pgrid">${a.photos.map(p => `<figure>${photo(p.image, p.alt)}</figure>`).join('')}</div>`;
-    else if (a.pair) m = `<div class="ppair">${a.pair.map(p => `<figure>${photo(p.image, p.alt)}<figcaption>${esc(p.cap)}</figcaption></figure>`).join('')}</div>`;
-    else if (a.logo) m = `<div class="dreams"><img src="${esc(a.logo)}" alt="DREAMS" loading="lazy"><div class="visits">${(a.visits || []).map(v => `<div><b>${esc(v.name)}</b><span>${esc(v.text)}</span></div>`).join('')}</div></div>`;
-    else m = `<div class="aart">${art(a.art)}</div>`;
-    return `<article class="ahead ${i % 2 ? 'flip' : ''} reveal"><div class="amedia">${m}</div>
-      <div class="atext"><p class="kicker">${esc(a.kicker)}</p><h3>${esc(a.title)}</h3><p>${esc(a.text)}</p>${list(a.bullets)}
-      ${a.link ? `<a class="btn btn-line" href="${esc(a.link.href)}" target="_blank" rel="noopener">${esc(a.link.label)}</a>` : ''}</div></article>`;
-  }).join('');
+  $('#ahead-rows').innerHTML = `<div class="grid g4 aheadgrid">${(D.ahead || []).map((a, i) => `<article class="card nx reveal" style="--d:${i * 70}ms">
+      <div class="thumb ${a.logo ? 'logo' : ''}">${a.logo ? `<img src="${esc(a.logo)}" alt="DREAMS" loading="lazy">` : a.image ? photo(a.image, a.title, a.pos) : art(a.art)}</div>
+      <div class="body"><p class="kicker">${esc(a.kicker)}</p><h3>${esc(a.title)}</h3><p>${esc(a.text)}</p>${a.link ? `<a class="link sm" href="${esc(a.link.href)}" target="_blank" rel="noopener">${esc(a.link.label)} &rsaquo;</a>` : ''}</div></article>`).join('')}</div>`;
 
   /* ----- institutions and MoU cycle ----- */
   $('#institutions').innerHTML = (D.institutions || []).map((n, i) => `<article class="card inst reveal" style="--d:${(i % 4) * 50}ms">

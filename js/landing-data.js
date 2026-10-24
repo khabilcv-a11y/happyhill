@@ -74,61 +74,18 @@ window.HH_SITE = {
       { name: 'Home for Mentally Deficient Children', who: 'Children with intellectual disabilities.', college: 'Farook Training College', image: 'assets/photos/home-orange.jpg' },
       { name: 'Government Home for the Elderly', who: 'Older people needing shelter and care.', college: 'Malabar Christian College', image: 'assets/photos/home-elderly.jpg' },
       { name: 'Asha Bhavan for Men', who: 'Men recovering from mental illness.', college: 'IHRD Kozhikode', image: 'assets/photos/home-asha-male.jpg' },
-      { name: 'Asha Bhavan for Women', who: 'Women recovering from mental illness.', college: 'Devagiri College', art: 'mind' },
+      { name: 'Asha Bhavan for Women', who: 'Women recovering from mental illness.', college: 'Devagiri College', image: 'assets/photos/home-asha-women.jpg' },
       { name: 'Mahila Mandiram', who: 'Women needing shelter and support.', college: 'Holy Cross College', image: 'assets/photos/home-mahila.jpg' },
       { name: 'After Care Home for Girls', who: 'Young women moving to independent life.', college: 'Holy Cross College', image: 'assets/photos/home-asha-long.jpg' }
     ]
   },
 
-  milestones: [
-    { status: 'done', title: 'A partner college for every home', text: 'Paired through annual MoUs.' },
-    { status: 'done', title: 'Happy Hill Tracker goes live', text: 'One portal for activities, requests and reports.', date: 'October 2026' },
-    { status: 'now', title: 'Sustained engagement', text: 'Regular activities and monthly review meetings.' },
-    { status: 'now', title: 'Aadhaar and UDID for residents', text: 'Pending applications followed up; camps planned.' },
-    { status: 'next', title: 'Asha Craft kiosk and brand', text: 'A place to show and sell residents\u2019 products.' },
-    { status: 'next', title: 'Lensfed Park renovation', text: 'A safe, accessible park, through CSR support.' }
-  ],
-
   /* ---------- looking ahead ---------- */
   ahead: [
-    {
-      kicker: 'Identity and access', title: 'Aadhaar and UDID',
-      text: 'Legal identity that opens up rights, schemes and services.',
-      bullets: ['Follow up pending Aadhaar applications', 'Enrolment and medical camps for Aadhaar and UDID'],
-      art: 'docs'
-    },
-    {
-      kicker: 'Livelihood and dignity', title: 'Asha Craft',
-      text: 'Handmade products by residents: skills, confidence and income.',
-      bullets: ['A kiosk to display and sell products', 'Instagram promotion, trademark and brand identity'],
-      photos: [
-        { image: 'assets/photos/craft-dolls.jpg', alt: 'Hand-made yarn dolls' },
-        { image: 'assets/photos/craft-keychains.jpg', alt: 'Pom-pom key chains' },
-        { image: 'assets/photos/craft-toys.jpg', alt: 'Soft toys on a shelf' },
-        { image: 'assets/photos/craft-beads.jpg', alt: 'A bead flower' }
-      ],
-      link: { href: 'https://www.instagram.com/asha.craftedwithhope/', label: 'Follow @asha.craftedwithhope' }
-    },
-    {
-      kicker: 'Recreational space', title: 'Lensfed Park',
-      text: 'A safe, accessible park for residents of the Home for the Elderly, Children\u2019s Home for Girls and HMDC.',
-      bullets: ['Follow up the CSR proposal and fund release'],
-      pair: [
-        { image: 'assets/photos/park-now.jpg', alt: 'Lensfed Park today', cap: 'Today' },
-        { image: 'assets/photos/park-vision.jpg', alt: 'How Lensfed Park could look', cap: 'The vision' }
-      ]
-    },
-    {
-      kicker: 'Education and enrichment', title: 'DREAMS sessions',
-      text: 'Academics, arts, science and technology, with life skills and career awareness.',
-      bullets: ['Age-appropriate, adolescent-friendly modules', 'Exposure visits and cultural activities'],
-      logo: 'assets/logos/dreams.png',
-      visits: [
-        { name: 'NIT', text: 'STEM and higher education' },
-        { name: 'Planetarium', text: 'Scientific curiosity' },
-        { name: 'Employment Exchange', text: 'Career readiness' }
-      ]
-    }
+    { kicker: 'Identity', title: 'Aadhaar and UDID', text: 'Camps and follow-up so every resident has legal identity.', art: 'docs' },
+    { kicker: 'Livelihood', title: 'Asha Craft', text: 'A kiosk, brand and Instagram page for residents’ handmade products.', image: 'assets/photos/craft-dolls.jpg', link: { href: 'https://www.instagram.com/asha.craftedwithhope/', label: '@asha.craftedwithhope' } },
+    { kicker: 'Recreation', title: 'Lensfed Park', text: 'A safe, accessible park through CSR support.', image: 'assets/photos/park-vision.jpg', pos: '50% 50%' },
+    { kicker: 'Learning', title: 'DREAMS sessions', text: 'Age-appropriate sessions, with visits to NIT, the Planetarium and the Employment Exchange.', logo: 'assets/logos/dreams.png' }
   ],
 
   /* ---------- institutions and partners ---------- */
