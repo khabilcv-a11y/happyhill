@@ -30,7 +30,7 @@
   const ico = (k, cls) => `<svg viewBox="0 0 24 24" class="${cls || 'ic'}" aria-hidden="true"><path d="${ICONS[k] || ICONS.spark}"/></svg>`;
 
   // Coloured illustration used when an item has no photograph
-  const PAL = { craft: ['#2f8f46', '#6cc24a'], mind: ['#7050c8', '#a68cf0'], culture: ['#d97a2b', '#f6c945'], health: ['#2b78c2', '#6cc2e8'], play: ['#d2453a', '#f49a6b'], learn: ['#1f6b33', '#3fae6a'], meet: ['#7a3a22', '#c8875a'], build: ['#4f6b57', '#9bb3a0'] };
+  const PAL = { craft: ['#2f8f46', '#6cc24a'], mind: ['#7050c8', '#a68cf0'], culture: ['#d97a2b', '#f6c945'], health: ['#2b78c2', '#6cc2e8'], play: ['#d2453a', '#f49a6b'], learn: ['#1f6b33', '#3fae6a'], meet: ['#7a3a22', '#c8875a'], build: ['#4f6b57', '#9bb3a0'], docs: ['#2b78c2', '#7fb6e8'], college: ['#1f6b33', '#6cc24a'] };
   let uid = 0;
   function art(kind) {
     const [a, b] = PAL[kind] || PAL.craft, id = 'g' + (++uid);
@@ -41,25 +41,39 @@
       <circle cx="200" cy="120" r="46" fill="#fff" opacity=".94"/>
       <g transform="translate(176 96) scale(2)" fill="none" stroke="${a}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="${ICONS[kind] || ICONS.craft}"/></g></svg>`;
   }
-  const media = (item, extra) => (item.image ? `<img src="${esc(item.image)}" alt="${esc(item.title)}" loading="lazy" style="object-position:${esc(item.pos || '50% 40%')}">` : art(item.art)) + (item.sample && D.SHOW_SAMPLE_TAGS ? '<span class="sample">Sample</span>' : '') + (extra || '');
+  const photo = (src, alt, pos) => `<img src="${esc(src)}" alt="${esc(alt)}" loading="lazy" style="object-position:${esc(pos || '50% 40%')}">`;
+  const media = (item, extra) => (item.image ? photo(item.image, item.title, item.pos) : art(item.art)) + (item.sample && D.SHOW_SAMPLE_TAGS ? '<span class="sample">Sample</span>' : '') + (extra || '');
 
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const dateOf = it => it.date ? new Date(it.date + 'T00:00:00') : it.inDays != null ? new Date(Date.now() + it.inDays * 864e5) : new Date(Date.now() - (it.daysAgo || 0) * 864e5);
   const long = d => `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
   const until = d => { const n = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate())) / 864e5); return n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : n > 1 ? `In ${n} days` : 'Held'; };
+  const list = (arr, cls) => `<ul class="${cls || 'ticks'}">${(arr || []).map(t => `<li>${ico('check', 'ic')}<span>${esc(t)}</span></li>`).join('')}</ul>`;
 
   /* ----- stats ----- */
   $('#stats').innerHTML = (D.stats || []).map(s => `<div class="stat"><b>${esc(s.n)}</b><span>${esc(s.l)}</span></div>`).join('');
 
-  /* ----- pillars & programmes ----- */
-  $('#pillars').innerHTML = (D.pillars || []).map((p, i) => `<article class="card pillar reveal" style="--d:${i * 80}ms"><div class="ico">${ico(p.icon)}</div><h3>${esc(p.title)}</h3><p>${esc(p.text)}</p></article>`).join('');
-  $('#programmes').innerHTML = (D.programmes || []).map((p, i) => `<article class="card prog reveal" style="--d:${i * 60}ms"><div class="ico sm">${ico(p.icon)}</div><div><h3>${esc(p.title)}</h3><p>${esc(p.text)}</p></div></article>`).join('');
+  /* ----- the challenge ----- */
+  const C = D.challenge || {};
+  $('#principle').innerHTML = esc(C.principle);
+  $('#problem-title').textContent = C.problemTitle || '';
+  $('#problem-text').textContent = C.problem || '';
+  $('#gaps').innerHTML = (C.gaps || []).map(t => `<li>${ico('check', 'ic')}<span>${esc(t)}</span></li>`).join('');
+  $('#causes').innerHTML = (C.causes || []).map(t => `<li>${ico('check', 'ic')}<span>${esc(t)}</span></li>`).join('');
+  $('#goal-text').textContent = C.goal || '';
+
+  /* ----- approach ----- */
+  $('#steps').innerHTML = (D.steps || []).map((s, i) => `<article class="step reveal" style="--d:${i * 70}ms"><span class="num">${i + 1}</span><h3>${esc(s.title)}</h3><p>${esc(s.text)}</p></article>`).join('');
+  $('#mou-purpose').textContent = (D.mou || {}).purpose || '';
+  $('#mou-resources').textContent = (D.mou || {}).resources || '';
+  $('#components').innerHTML = (D.components || []).map((p, i) => `<article class="card prog reveal" style="--d:${i * 60}ms"><div class="ico sm">${ico(p.icon)}</div><div><h3>${esc(p.title)}</h3><p>${esc(p.text)}</p></div></article>`).join('');
 
   /* ----- the welfare homes ----- */
   const H = D.homes || {};
   $('#homes-intro').textContent = H.intro || '';
-  $('#home-list').innerHTML = (H.types || []).map(t => `<li>${ico('build', 'ic')}<span>${esc(t)}</span></li>`).join('');
-  $('#home-mosaic').innerHTML = (H.photos || []).map((p, i) => `<figure class="mo reveal" style="--d:${i * 70}ms"><img src="${esc(p.image)}" alt="${esc(p.alt)}" loading="lazy"></figure>`).join('');
+  $('#home-cards').innerHTML = (H.list || []).map((h, i) => `<article class="card hcard reveal" style="--d:${(i % 4) * 70}ms">
+      <div class="thumb">${h.image ? photo(h.image, h.name, h.pos) : art(h.art)}</div>
+      <div class="body"><h3>${esc(h.name)}</h3><p class="who">${esc(h.who)}</p><span class="pill soft">${ico('college', 'ic xs')} ${esc(h.college)}</span></div></article>`).join('');
 
   /* ----- milestones ----- */
   const ST = { done: ['Done', 'done'], now: ['In progress', 'now'], next: ['Coming up', 'next'] };
@@ -69,17 +83,31 @@
       <div class="tl-card"><div class="tl-top"><span class="pill ${s[1]}">${s[0]}</span>${m.date ? `<span class="muted">${esc(m.date)}</span>` : ''}</div><h3>${esc(m.title)}</h3><p>${esc(m.text)}</p></div></li>`;
   }).join('');
 
-  /* ----- institutions ----- */
-  $('#institutions').innerHTML = (D.institutions || []).map((n, i) => `<article class="card inst reveal" style="--d:${i * 50}ms">
+  /* ----- looking ahead ----- */
+  $('#ahead-rows').innerHTML = (D.ahead || []).map((a, i) => {
+    let m = '';
+    if (a.photos) m = `<div class="pgrid">${a.photos.map(p => `<figure>${photo(p.image, p.alt)}</figure>`).join('')}</div>`;
+    else if (a.pair) m = `<div class="ppair">${a.pair.map(p => `<figure>${photo(p.image, p.alt)}<figcaption>${esc(p.cap)}</figcaption></figure>`).join('')}</div>`;
+    else if (a.logo) m = `<div class="dreams"><img src="${esc(a.logo)}" alt="DREAMS" loading="lazy"><div class="visits">${(a.visits || []).map(v => `<div><b>${esc(v.name)}</b><span>${esc(v.text)}</span></div>`).join('')}</div></div>`;
+    else m = `<div class="aart">${art(a.art)}</div>`;
+    return `<article class="ahead ${i % 2 ? 'flip' : ''} reveal"><div class="amedia">${m}</div>
+      <div class="atext"><p class="kicker">${esc(a.kicker)}</p><h3>${esc(a.title)}</h3><p>${esc(a.text)}</p>${list(a.bullets)}
+      ${a.link ? `<a class="btn btn-line" href="${esc(a.link.href)}" target="_blank" rel="noopener">${esc(a.link.label)}</a>` : ''}</div></article>`;
+  }).join('');
+
+  /* ----- institutions, stakeholders, MoU cycle ----- */
+  $('#institutions').innerHTML = (D.institutions || []).map((n, i) => `<article class="card inst reveal" style="--d:${(i % 4) * 50}ms">
       <div class="mark">${n.logo ? `<img src="${esc(n.logo)}" alt="" onerror="this.parentNode.textContent='${esc(n.mark)}'">` : esc(n.mark)}</div><h3>${esc(n.name)}</h3><p>${esc(n.role)}</p></article>`).join('');
+  $('#stakeholders').innerHTML = (D.stakeholders || []).map(t => `<span class="tag">${esc(t)}</span>`).join('');
+  $('#cycle').innerHTML = (D.mouCycle || []).map((s, i) => `<article class="step reveal" style="--d:${i * 70}ms"><span class="num">${esc(s.n)}</span><h3>${esc(s.title)}</h3><p>${esc(s.text)}</p></article>`).join('');
 
   /* ----- colleges ----- */
   $('#colleges').innerHTML = (D.colleges || []).map((c, i) => `<article class="card colc reveal" style="--d:${i * 50}ms">
-      ${c.image ? `<div class="thumb sq"><img src="${esc(c.image)}" alt="${esc(c.name)} at the certificate ceremony" loading="lazy" style="object-position:${esc(c.pos || '50% 38%')}"></div>` : ''}
-      <div class="body"><div class="ico sm">${ico('college')}</div><div><h3>${esc(c.name)}</h3><p>${ico('link', 'ic xs')} ${esc(c.home)}</p><span class="pill soft">Annual MoU</span></div></div>${c.sample && D.SHOW_SAMPLE_TAGS ? '<span class="sample">Please confirm</span>' : ''}</article>`).join('');
+      <div class="thumb sq">${c.image ? photo(c.image, c.name + ' at the certificate ceremony', c.pos || '50% 38%') : art(c.art || 'college')}</div>
+      <div class="body"><div class="ico sm">${ico('college')}</div><div><h3>${esc(c.name)}</h3>${(c.homes || []).map(h => `<p>${ico('link', 'ic xs')} ${esc(h)}</p>`).join('')}<span class="pill soft">Annual MoU</span></div></div></article>`).join('');
 
   /* ----- activities ----- */
-  $('#activity-cards').innerHTML = (D.activities || []).map((a, i) => `<article class="card act reveal" style="--d:${i * 60}ms">
+  $('#activity-cards').innerHTML = (D.activities || []).map((a, i) => `<article class="card act reveal" style="--d:${(i % 3) * 60}ms">
       <div class="thumb">${media(a)}</div>
       <div class="body"><div class="meta"><span>${a.date || a.daysAgo != null ? ico('cal', 'ic xs') + ' ' + long(dateOf(a)) : (a.label ? esc(a.label) : '')}</span>${a.tag || a.college ? `<span class="pill soft">${esc(a.tag || a.college)}</span>` : ''}</div><h3>${esc(a.title)}</h3><p>${esc(a.text)}</p></div></article>`).join('');
 
@@ -115,7 +143,6 @@
 
   /* ----- reports (the whole section is hidden until there is at least one) ----- */
   if (!(D.reports || []).length) document.querySelectorAll('#reports, a[href="#reports"]').forEach(el => (el.closest('li') || el).remove());
-  /* ----- reports ----- */
   if ($('#report-cards')) $('#report-cards').innerHTML = (D.reports || []).map((r, i) => `<article class="card rep reveal" style="--d:${i * 60}ms">
       <div class="ico">${ico('docs')}</div>
       <div class="grow"><span class="pill soft">${esc(r.kind)}</span><h3>${esc(r.title)}</h3><p>${esc(r.text)}</p></div>
