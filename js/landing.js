@@ -41,7 +41,7 @@
       <circle cx="200" cy="120" r="46" fill="#fff" opacity=".94"/>
       <g transform="translate(176 96) scale(2)" fill="none" stroke="${a}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="${ICONS[kind] || ICONS.craft}"/></g></svg>`;
   }
-  const media = (item, extra) => (item.image ? `<img src="${esc(item.image)}" alt="${esc(item.title)}" loading="lazy">` : art(item.art)) + (item.sample && D.SHOW_SAMPLE_TAGS ? '<span class="sample">Sample</span>' : '') + (extra || '');
+  const media = (item, extra) => (item.image ? `<img src="${esc(item.image)}" alt="${esc(item.title)}" loading="lazy" style="object-position:${esc(item.pos || '50% 40%')}">` : art(item.art)) + (item.sample && D.SHOW_SAMPLE_TAGS ? '<span class="sample">Sample</span>' : '') + (extra || '');
 
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const dateOf = it => it.date ? new Date(it.date + 'T00:00:00') : it.inDays != null ? new Date(Date.now() + it.inDays * 864e5) : new Date(Date.now() - (it.daysAgo || 0) * 864e5);
@@ -68,13 +68,36 @@
       <div class="mark">${n.logo ? `<img src="${esc(n.logo)}" alt="" onerror="this.parentNode.textContent='${esc(n.mark)}'">` : esc(n.mark)}</div><h3>${esc(n.name)}</h3><p>${esc(n.role)}</p></article>`).join('');
 
   /* ----- colleges ----- */
-  $('#colleges').innerHTML = (D.colleges || []).map((c, i) => `<article class="card col reveal" style="--d:${i * 50}ms">
-      <div class="ico sm">${ico('college')}</div><div><h3>${esc(c.name)}</h3><p>${ico('link', 'ic xs')} ${esc(c.home)}</p><span class="pill soft">Annual MoU</span></div>${c.sample && D.SHOW_SAMPLE_TAGS ? '<span class="sample">Sample</span>' : ''}</article>`).join('');
+  $('#colleges').innerHTML = (D.colleges || []).map((c, i) => `<article class="card colc reveal" style="--d:${i * 50}ms">
+      ${c.image ? `<div class="thumb sq"><img src="${esc(c.image)}" alt="${esc(c.name)} at the certificate ceremony" loading="lazy" style="object-position:${esc(c.pos || '50% 38%')}"></div>` : ''}
+      <div class="body"><div class="ico sm">${ico('college')}</div><div><h3>${esc(c.name)}</h3><p>${ico('link', 'ic xs')} ${esc(c.home)}</p><span class="pill soft">Annual MoU</span></div></div>${c.sample && D.SHOW_SAMPLE_TAGS ? '<span class="sample">Please confirm</span>' : ''}</article>`).join('');
 
   /* ----- activities ----- */
   $('#activity-cards').innerHTML = (D.activities || []).map((a, i) => `<article class="card act reveal" style="--d:${i * 60}ms">
       <div class="thumb">${media(a)}</div>
-      <div class="body"><div class="meta"><span>${ico('cal', 'ic xs')} ${long(dateOf(a))}</span><span class="pill soft">${esc(a.college)}</span></div><h3>${esc(a.title)}</h3><p>${esc(a.text)}</p></div></article>`).join('');
+      <div class="body"><div class="meta"><span>${a.date || a.daysAgo != null ? ico('cal', 'ic xs') + ' ' + long(dateOf(a)) : (a.label ? esc(a.label) : '')}</span>${a.tag || a.college ? `<span class="pill soft">${esc(a.tag || a.college)}</span>` : ''}</div><h3>${esc(a.title)}</h3><p>${esc(a.text)}</p></div></article>`).join('');
+
+  /* ----- photo slideshow: runs by itself, always centred, nothing cropped ----- */
+  const gal = D.gallery || [], track = $('#track'), slider = $('#slider');
+  if (gal.length) {
+    const one = gal.map(g => `<figure class="slide"><span class="bg" style="background-image:url('${esc(g.image)}')"></span><img src="${esc(g.image)}" alt="${esc(g.alt)}" loading="lazy"></figure>`).join('');
+    track.innerHTML = one + one + one;                       // three copies so the loop never runs out
+    const slides = [...track.children], n = gal.length;
+    slides.forEach((el, i) => { if (i < n || i >= 2 * n) el.setAttribute('aria-hidden', 'true'); });
+    let idx = n;
+    const place = () => {
+      const el = slides[idx];
+      track.style.transform = `translateX(${slider.clientWidth / 2 - (el.offsetLeft + el.offsetWidth / 2)}px)`;
+      slides.forEach((s2, i) => s2.classList.toggle('on', i === idx));
+    };
+    const jump = () => { track.classList.add('jump'); place(); void track.offsetWidth; track.classList.remove('jump'); };
+    track.addEventListener('transitionend', e => { if (e.target === track && idx >= 2 * n) { idx -= n; jump(); } });
+    window.addEventListener('resize', jump);
+    jump();
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setInterval(() => { if (document.hidden) return; idx++; place(); }, 3800);
+    }
+  }
 
   /* ----- events ----- */
   $('#event-cards').innerHTML = (D.events || []).slice().sort((x, y) => dateOf(x) - dateOf(y)).map((e, i) => {

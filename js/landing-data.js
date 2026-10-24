@@ -59,24 +59,37 @@ window.HH_SITE = {
     { name: 'Indian Institute of Architects', role: 'Design partner for infrastructure', mark: 'IIA' }
   ],
 
-  // One entry per partner college. Add real names as MoUs are signed.
+  // One entry per partner college. Names and homes are read from the slides shown at the MoU ceremony; please confirm them.
   colleges: [
-    { name: 'Partner college 1', home: 'Welfare home 1', sample: true },
-    { name: 'Partner college 2', home: 'Welfare home 2', sample: true },
-    { name: 'Partner college 3', home: 'Welfare home 3', sample: true },
-    { name: 'Partner college 4', home: 'Welfare home 4', sample: true },
-    { name: 'Partner college 5', home: 'Welfare home 5', sample: true },
-    { name: 'Partner college 6', home: 'Welfare home 6', sample: true }
+    { name: 'IHRD College of Applied Science', home: 'Asha Bhavan', image: 'assets/photos/mou-ihrd.jpg', pos: '50% 42%' },
+    { name: 'St. Joseph’s College (Autonomous), Devagiri', home: 'Old Age Home', image: 'assets/photos/mou-stjoseph.jpg', pos: '50% 42%' },
+    { name: 'Providence Women’s College (Autonomous)', home: 'Welfare home (name to be confirmed)', image: 'assets/photos/mou-providence.jpg', pos: '50% 40%', sample: true },
+    { name: 'Holy Cross Institute of Management and Technology', home: 'Asha Bhavan (Women)', image: 'assets/photos/mou-holycross.jpg', pos: '50% 45%' },
+    { name: 'Malabar Christian College', home: 'Old Age Home', image: 'assets/photos/mou-malabar.jpg', pos: '50% 42%' },
+    { name: 'Partner college (name to be confirmed)', home: 'Welfare home (name to be confirmed)', image: 'assets/photos/mou-sixth.jpg', pos: '50% 42%', sample: true }
   ],
 
-  // daysAgo is for samples. For real entries use  date: '2026-11-05'  instead.
+  // Use  date: '2026-11-05'  for a dated card, or  label: 'text'  to show words instead of a date.
   activities: [
-    { art: 'craft', title: 'Envelope-making training', text: 'A hands-on session on making envelopes, with tips on pricing and selling.', college: 'Partner college 1', daysAgo: 6, sample: true },
-    { art: 'mind', title: 'Group counselling circle', text: 'A relaxed circle for sharing, listening and building social skills.', college: 'Partner college 2', daysAgo: 12, sample: true },
-    { art: 'culture', title: 'Cultural evening', text: 'Music, dance and storytelling led together by students and residents.', college: 'Partner college 3', daysAgo: 19, sample: true },
-    { art: 'health', title: 'Health awareness camp', text: 'A basic health check-up and an awareness talk with a local clinic.', college: 'Partner college 4', daysAgo: 27, sample: true },
-    { art: 'play', title: 'Recreation day', text: 'Indoor and outdoor games and a shared meal.', college: 'Partner college 5', daysAgo: 34, sample: true },
-    { art: 'learn', title: 'Life skills workshop', text: 'Everyday skills for independence: budgeting, hygiene and communication.', college: 'Partner college 6', daysAgo: 41, sample: true }
+    { image: 'assets/photos/dreams-stage.jpg', pos: '50% 58%', title: 'DREAMS launch', text: 'Happy Hill builds the foundation; DREAMS expands the horizon. The launch brought the District team and partners together.', tag: 'Launch', date: '2026-02-03' },
+    { image: 'assets/photos/tree-planting-2.jpg', pos: '50% 45%', title: 'Tree planting with SBI', text: 'District Administration officials and SBI Bank colleagues plant saplings under the Happy Hill project.', tag: 'Community' },
+    { image: 'assets/photos/partner-group-2.jpg', pos: '50% 62%', title: 'Partner colleges meet the District team', text: 'Coordinators from the partner colleges gather with District officials, with their Happy Hill folders in hand.', tag: 'Partnership' },
+    { image: 'assets/photos/mou-holycross.jpg', pos: '50% 45%', title: 'Certificates for partner colleges', text: 'Each partner college is welcomed and presented with a certificate as it joins a welfare home.', tag: 'MoU' },
+    { image: 'assets/photos/group-collectorate.jpg', pos: '50% 72%', title: 'Together at the Collectorate', text: 'Students, coordinators and officials after a Happy Hill gathering at the Civil Station.', tag: 'Gathering' },
+    { image: 'assets/photos/dreams-lamp.jpg', pos: '50% 55%', title: 'Lighting the lamp', text: 'The lamp is lit to open the DREAMS launch.', tag: 'Launch', date: '2026-02-03' }
+  ],
+
+  // Photographs shown in the "In pictures" section. Only photos taken with consent; no residents' faces.
+  gallery: [
+    { image: 'assets/photos/dreams-stage.jpg', alt: 'The stage at the DREAMS launch' },
+    { image: 'assets/photos/tree-planting-1.jpg', alt: 'Officials planting a sapling' },
+    { image: 'assets/photos/partner-group-1.jpg', alt: 'Partner college coordinators with District officials' },
+    { image: 'assets/photos/dreams-speech.jpg', alt: 'A speaker addressing the DREAMS launch' },
+    { image: 'assets/photos/audience.jpg', alt: 'Students and coordinators at a Happy Hill gathering' },
+    { image: 'assets/photos/mou-ihrd.jpg', alt: 'A partner college receiving its certificate' },
+    { image: 'assets/photos/tree-planting-2.jpg', alt: 'Tree planting under the Happy Hill banner' },
+    { image: 'assets/photos/group-collectorate.jpg', alt: 'A group photograph at the Collectorate' },
+    { image: 'assets/photos/mou-malabar.jpg', alt: 'A partner college and welfare home presented on screen' }
   ],
 
   // file: path or link to a PDF. Leave empty to show "Available soon".
