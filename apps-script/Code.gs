@@ -17,13 +17,23 @@ var T = {
   homes:      { sheet: 'Homes', prefix: 'H', cols: ['id', 'name', 'head', 'phone', 'email', 'collegeId'] },
   activities: { sheet: 'Activities', prefix: 'A', cols: ['id', 'title', 'desc', 'collegeId', 'homeId', 'planned', 'actual', 'status', 'wf', 'coordinator', 'outcome', 'evidence', 'challenges', 'nextAction', 'followUp', 'homeConfirmed', 'updatedBy', 'updatedAt', 'history'], bool: ['followUp', 'homeConfirmed'], json: ['history'] },
   followups:  { sheet: 'Followups', prefix: 'F', cols: ['id', 'activityId', 'reason', 'action', 'owner', 'due', 'done'], bool: ['done'] },
-  mous:       { sheet: 'MoUs', prefix: 'M', cols: ['id', 'collegeId', 'homeId', 'start', 'end', 'renewal'] },
-  reviews:    { sheet: 'Reviews', prefix: 'R', cols: ['id', 'collegeId', 'date', 'quarter', 'minutes', 'actions'] },
+  mous:       { sheet: 'MoUs', prefix: 'M', cols: ['id', 'collegeId', 'homeId', 'start', 'end', 'renewal', 'history'], json: ['history'] },
+  meetings:   { sheet: 'Meetings', prefix: 'E', cols: ['id', 'title', 'type', 'date', 'time', 'venue', 'agenda', 'collegeIds', 'homeIds', 'status', 'minutes', 'actions', 'seriesId', 'createdBy', 'createdAt'] },
+  files:      { sheet: 'Files', prefix: 'X', cols: ['id', 'kind', 'activityId', 'meetingId', 'collegeId', 'homeId', 'name', 'mime', 'size', 'driveId', 'thumbId', 'caption', 'consent', 'status', 'uploadedBy', 'uploadedAt', 'approvedBy'], bool: ['consent'], num: ['size'] },
+  updates:    { sheet: 'Updates', prefix: 'P', cols: ['id', 'at', 'type', 'text', 'collegeIds', 'homeIds', 'actor'] },
   resources:  { sheet: 'Resources', prefix: 'D', cols: ['id', 'title', 'kind', 'url'] },
   requests:   { sheet: 'Requests', prefix: 'Q', cols: ['id', 'collegeId', 'homeId', 'type', 'title', 'details', 'specifics', 'priority', 'neededBy', 'activityId', 'status', 'raisedBy', 'raisedRole', 'createdAt', 'updatedAt', 'closedBy', 'closedAt', 'closeNote'] },
   messages:   { sheet: 'Messages', prefix: 'G', cols: ['id', 'requestId', 'by', 'role', 'at', 'kind', 'text'] }
 };
 var REQ_TYPES = ['Material', 'Session', 'Intervention', 'Attention', 'Other'];
+var MEETING_TYPES = ['Quarterly review', 'Monthly assessment', 'Other'];
+var MEETING_STATUS = ['Scheduled', 'Held', 'Cancelled'];
+var ACT_STATUS = ['Planned', 'Ongoing', 'Completed', 'Postponed', 'On Hold'];
+var FILE_MAX = 5.5 * 1024 * 1024;            // 5.5 MB per file (photos are shrunk by the browser before upload)
+var PHOTO_MIME = ['image/jpeg', 'image/png', 'image/webp'];
+var DOC_MIME = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'text/plain'].concat(PHOTO_MIME);
+function isAdminRole_(r) { return r === 'admin' || r === 'superadmin'; }
+function splitIds_(s) { return String(s || '').split(',').map(function (x) { return x.trim(); }).filter(function (x) { return x; }); }
 var LOG_COLS = ['t', 'user', 'role', 'action', 'detail'];
 var SETTINGS_COLS = ['key', 'value'];
 
@@ -52,6 +62,10 @@ function route_(req) {
   if (a === 'changePassword') return changePassword_(user, req);
   if (a === 'resetPassword') return resetPassword_(user, req);
   if (a === 'save') return withLock_(function () { return save_(user, req); });
+  if (a === 'upload') return withLock_(function () { return upload_(user, req); });
+  if (a === 'fileData') return fileData_(user, req);
+  if (a === 'fileStatus') return withLock_(function () { return fileStatus_(user, req); });
+  if (a === 'fileDelete') return withLock_(function () { return fileDelete_(user, req); });
   throw new Error('Unknown action');
 }
 
@@ -151,21 +165,27 @@ function updateUser_(id, patch) {
 function bootstrap_(user) {
   var d = {
     colleges: readAll_('colleges'), homes: readAll_('homes'), activities: readAll_('activities'), followups: readAll_('followups'),
-    mous: readAll_('mous'), reviews: readAll_('reviews'), resources: readAll_('resources'), requests: readAll_('requests'), messages: readAll_('messages'), settings: readSettings_(), users: [], logs: []
+    mous: readAll_('mous'), meetings: readAll_('meetings'), files: readAll_('files'), updates: readAll_('updates').slice(-300), resources: readAll_('resources'), requests: readAll_('requests'), messages: readAll_('messages'), settings: readSettings_(), users: [], logs: []
   };
   if (user.role === 'college') {
     d.colleges = d.colleges.filter(function (c) { return c.id === user.collegeId; });
     d.homes = d.homes.filter(function (h) { return h.collegeId === user.collegeId; });
     d.activities = d.activities.filter(function (a) { return a.collegeId === user.collegeId; });
     d.mous = d.mous.filter(function (m) { return m.collegeId === user.collegeId; });
-    d.reviews = d.reviews.filter(function (r) { return r.collegeId === user.collegeId; });
   } else if (user.role === 'home') {
     d.homes = d.homes.filter(function (h) { return h.id === user.homeId; });
     d.colleges = d.colleges.filter(function (c) { return c.homeId === user.homeId; });
     d.activities = d.activities.filter(function (a) { return a.homeId === user.homeId; });
     d.mous = d.mous.filter(function (m) { return m.homeId === user.homeId; });
-    d.reviews = [];
   }
+  if (user.role === 'college' || user.role === 'home') {
+    d.meetings = d.meetings.filter(function (m) { return meetingHas_(m, user); });
+    d.updates = d.updates.filter(function (u) { return user.role === 'college' ? splitIds_(u.collegeIds).indexOf(user.collegeId) >= 0 : splitIds_(u.homeIds).indexOf(user.homeId) >= 0; });
+  }
+  var mmap = {};
+  d.meetings.forEach(function (m) { mmap[m.id] = m; });
+  d.files = d.files.filter(function (f) { return f.status !== 'Deleted' && canViewFile_(user, f, mmap); }).map(function (f) { delete f.driveId; delete f.thumbId; return f; });
+  d.updates.reverse();
   var ids = {};
   d.activities.forEach(function (a) { ids[a.id] = true; });
   d.followups = d.followups.filter(function (f) { return ids[f.activityId]; });
@@ -200,6 +220,7 @@ function save_(user, req) {
     addStatusMessage_(out, user);
   }
 
+  saveHooks_(user, key, existing, out);
   var label = String(out.title || out.name || out.reason || out.quarter || out.text || out.id).slice(0, 80);
   if (key === 'activities' && existing && existing.wf !== out.wf) action = { Submitted: 'Submitted', Verified: 'Verified', Returned: 'Returned', Draft: 'Edited' }[out.wf] || 'Edited';
   if (key === 'activities' && existing && !existing.homeConfirmed && out.homeConfirmed) action = 'Home confirmed';
@@ -209,25 +230,56 @@ function save_(user, req) {
   return { ok: true, row: key === 'users' ? publicUser_(out) : out };
 }
 
-function singular_(k) { return { requests: 'request', messages: 'message', users: 'user', colleges: 'college', homes: 'welfare home', activities: 'activity', followups: 'follow-up', mous: 'MoU', reviews: 'review', resources: 'resource' }[k]; }
+function singular_(k) { return { requests: 'request', messages: 'message', users: 'user', colleges: 'college', homes: 'welfare home', activities: 'activity', followups: 'follow-up', mous: 'MoU', meetings: 'meeting', resources: 'resource' }[k]; }
 
 function authorize_(user, key, existing, inc) {
   var role = user.role, isStaff = STAFF.indexOf(role) >= 0, now = today_();
   var out = {};
   T[key].cols.forEach(function (c) { out[c] = inc[c] != null ? inc[c] : (existing ? existing[c] : ''); });
 
+  var isAdmin = isAdminRole_(role);
   if (key === 'activities') {
+    function copyOf(o) { var k = {}; Object.keys(o).forEach(function (x) { k[x] = o[x]; }); return k; }
     if (role === 'college') {
-      if (inc.collegeId !== user.collegeId) throw new Error('Not allowed: other college');
-      if (existing && (existing.collegeId !== user.collegeId || ['Draft', 'Returned'].indexOf(existing.wf) < 0)) throw new Error('This activity can no longer be edited');
-      if (['Draft', 'Returned', 'Submitted'].indexOf(out.wf) < 0) throw new Error('Not allowed: review state');
-      out.homeConfirmed = existing ? existing.homeConfirmed : false;
+      if (!existing) {
+        if (inc.collegeId !== user.collegeId) throw new Error('Not allowed: other college');
+        if (['Draft', 'Submitted'].indexOf(out.wf) < 0) throw new Error('Not allowed: review state');
+        out.homeConfirmed = false;
+      } else {
+        if (existing.collegeId !== user.collegeId) throw new Error('Not allowed: other college');
+        if (['Draft', 'Returned'].indexOf(existing.wf) >= 0) {
+          if (inc.collegeId !== user.collegeId) throw new Error('Not allowed: other college');
+          if (['Draft', 'Returned', 'Submitted'].indexOf(out.wf) < 0) throw new Error('Not allowed: review state');
+          out.homeConfirmed = existing.homeConfirmed;
+        } else {
+          // Submitted or Verified: the details are locked, but the coordinator can move the status on (for example to Completed).
+          if (ACT_STATUS.indexOf(inc.status) < 0) throw new Error('Choose a valid status');
+          var kc = copyOf(existing);
+          if (inc.status !== existing.status) {
+            kc.status = inc.status;
+            if (inc.status === 'Completed') {
+              kc.actual = /^\d{4}-\d{2}-\d{2}$/.test(String(inc.actual || '')) ? String(inc.actual) : now;
+              var oc = String(inc.outcome || '').trim() || String(existing.outcome || '').trim();
+              if (!oc) throw new Error('Add a short outcome before marking it completed');
+              kc.outcome = oc.slice(0, 2000);
+            }
+            if (existing.wf === 'Verified') { kc.wf = 'Submitted'; kc.homeConfirmed = false; }   // a change after verification needs verifying again
+          }
+          kc.history = inc.history || existing.history;
+          out = kc;
+        }
+      }
     } else if (role === 'home') {
       if (!existing || existing.homeId !== user.homeId || existing.wf !== 'Submitted') throw new Error('Not allowed');
-      var keep = {}; Object.keys(existing).forEach(function (k) { keep[k] = existing[k]; });
+      var keep = copyOf(existing);
       keep.homeConfirmed = true; keep.history = inc.history || existing.history;
       out = keep;
-    } else if (!isStaff) throw new Error('Not allowed');
+    } else if (role === 'district') {
+      if (!existing || existing.wf !== 'Submitted' || ['Verified', 'Returned'].indexOf(inc.wf) < 0) throw new Error('The District can verify or return submitted activities only');
+      var kd = copyOf(existing);
+      kd.wf = inc.wf; kd.history = inc.history || existing.history;
+      out = kd;
+    } else if (!isAdmin) throw new Error('Not allowed');
     var c = readAll_('colleges').filter(function (x) { return x.id === out.collegeId; })[0];
     if (!c) throw new Error('College not found');
     out.homeId = c.homeId;
@@ -256,9 +308,10 @@ function authorize_(user, key, existing, inc) {
     var to = inc.status;
     if (['Open', 'In progress', 'Closed'].indexOf(to) < 0 || to === existing.status) throw new Error('No change to make');
     if (to === 'In progress' && existing.status !== 'Open') throw new Error('Only an open request can be started');
-    var provider = role === 'college' || STAFF.indexOf(role) >= 0;      // the college (or the District) attends a request
-    if (to === 'In progress' && !provider) throw new Error('Only the college or the District can start work on a request');
-    if (to === 'Closed' && !provider && !(role === 'home' && existing.raisedRole === 'home')) throw new Error('Only the college or the District can close this request');
+    var provider = role === 'college' || isAdmin;      // the college (or Admin) attends a request; the District only oversees
+    if (to === 'In progress' && !provider) throw new Error('Only the college or Admin can start work on a request');
+    if (to === 'Closed' && !provider && !(role === 'home' && existing.raisedRole === 'home')) throw new Error('Only the college or Admin can close this request');
+    if (to === 'Open' && !provider && role !== 'district' && !(role === 'home' && existing.raisedRole === 'home')) throw new Error('Not allowed');
     var upd = {}; Object.keys(existing).forEach(function (k) { upd[k] = existing[k]; });
     upd.status = to; upd.updatedAt = nowIso;
     if (to === 'Closed') {
@@ -277,7 +330,7 @@ function authorize_(user, key, existing, inc) {
     return { id: '', requestId: rq.id, by: user.name, role: role, at: new Date().toISOString(), kind: 'message', text: text.slice(0, 1000) };
   }
   if (key === 'followups') {
-    if (!(isStaff || role === 'college')) throw new Error('Not allowed');
+    if (!(isAdmin || role === 'college')) throw new Error('Not allowed');
     var act = readAll_('activities').filter(function (a) { return a.id === out.activityId; })[0];
     if (!act) throw new Error('Activity not found');
     if (role === 'college' && act.collegeId !== user.collegeId) throw new Error('Not allowed: other college');
@@ -295,9 +348,53 @@ function authorize_(user, key, existing, inc) {
     else { out.salt = newSalt_(); out.passHash = hash_(out.salt, DEFAULT_PASSWORD); out.mustChange = true; out.active = true; }
     return out;
   }
-  // colleges, homes, mous, reviews, resources
-  if (!isStaff) throw new Error('Not allowed');
+  if (key === 'meetings') {
+    if (!isStaff) throw new Error('Not allowed');
+    var allC = readAll_('colleges').map(function (x) { return x.id; }), allH = readAll_('homes').map(function (x) { return x.id; });
+    var cIds = splitIds_(inc.collegeIds).filter(function (x) { return allC.indexOf(x) >= 0; }), hIds = splitIds_(inc.homeIds).filter(function (x) { return allH.indexOf(x) >= 0; });
+    if (!cIds.length && !hIds.length) throw new Error('Choose who should attend');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(inc.date || ''))) throw new Error('Choose a date');
+    var mt = MEETING_TYPES.indexOf(inc.type) >= 0 ? inc.type : 'Other';
+    var ms = existing ? (MEETING_STATUS.indexOf(inc.status) >= 0 ? inc.status : existing.status) : 'Scheduled';
+    var mo = existing ? JSON.parse(JSON.stringify(existing)) : { id: '', minutes: '', actions: '', createdBy: user.name, createdAt: new Date().toISOString(), seriesId: String(inc.seriesId || '').slice(0, 40) };
+    mo.title = (String(inc.title || '').trim() || mt).slice(0, 120); mo.type = mt; mo.date = String(inc.date); mo.time = String(inc.time || '').slice(0, 20);
+    mo.venue = String(inc.venue || '').slice(0, 160); mo.agenda = String(inc.agenda || '').slice(0, 1500);
+    mo.collegeIds = cIds.join(','); mo.homeIds = hIds.join(','); mo.status = ms;
+    if (isAdmin) { if (inc.minutes != null) mo.minutes = String(inc.minutes).slice(0, 6000); if (inc.actions != null) mo.actions = String(inc.actions).slice(0, 3000); }
+    return mo;
+  }
+  // colleges, homes, mous, resources: Admin and Super Admin only
+  if (!isAdmin) throw new Error('Not allowed');
   return out;
+}
+
+function meetingHas_(m, user) {
+  if (STAFF.indexOf(user.role) >= 0) return true;
+  if (user.role === 'college') return splitIds_(m.collegeIds).indexOf(user.collegeId) >= 0;
+  if (user.role === 'home') return splitIds_(m.homeIds).indexOf(user.homeId) >= 0;
+  return false;
+}
+function addUpdate_(user, type, text, collegeIds, homeIds) {
+  try {
+    writeRow_('updates', sheet_('updates').getLastRow() + 1, { id: nextId_('updates'), at: new Date().toISOString(), type: type, text: String(text).slice(0, 240), collegeIds: collegeIds || '', homeIds: homeIds || '', actor: user ? user.name : '' });
+  } catch (e) { }
+}
+function fmtDate_(d) { var p = String(d).split('-'); return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : d; }
+function saveHooks_(user, key, existing, out) {
+  if (key === 'activities' && existing) {
+    if (existing.wf !== out.wf && (out.wf === 'Verified' || out.wf === 'Returned')) addUpdate_(user, 'activity', 'Activity ' + (out.wf === 'Verified' ? 'verified' : 'returned for correction') + ': ' + out.title, out.collegeId, out.homeId);
+    if (existing.status !== out.status && out.status === 'Completed') addUpdate_(user, 'activity', 'Activity completed: ' + out.title, out.collegeId, out.homeId);
+  }
+  if (key === 'requests' && existing && out.status === 'Closed' && existing.status !== 'Closed') addUpdate_(user, 'request', 'Request closed: ' + out.title, out.collegeId, out.homeId);
+  if (key === 'meetings') {
+    if (!existing) addUpdate_(user, 'meeting', 'Meeting scheduled: ' + out.title + ' on ' + fmtDate_(out.date) + (out.time ? ' at ' + out.time : ''), out.collegeIds, out.homeIds);
+    else if (existing.status !== out.status) addUpdate_(user, 'meeting', 'Meeting ' + out.status.toLowerCase() + ': ' + out.title + ' (' + fmtDate_(out.date) + ')', out.collegeIds, out.homeIds);
+    else if (existing.date !== out.date || existing.time !== out.time) addUpdate_(user, 'meeting', 'Meeting rescheduled: ' + out.title + ' now ' + fmtDate_(out.date) + (out.time ? ' at ' + out.time : ''), out.collegeIds, out.homeIds);
+  }
+  if (key === 'mous' && existing && existing.end !== out.end) {
+    var col = readAll_('colleges').filter(function (c) { return c.id === out.collegeId; })[0];
+    addUpdate_(user, 'mou', 'MoU renewed: ' + (col ? col.name : out.collegeId) + ', valid until ' + fmtDate_(out.end), out.collegeId, out.homeId);
+  }
 }
 
 function canSeeRequest_(user, r) {
@@ -316,6 +413,102 @@ function addStatusMessage_(req, user) {
   var text = req.status === 'Closed' ? 'closed the request: ' + req.closeNote : req.status === 'In progress' ? 'marked it in progress' : 'reopened the request';
   var id = nextId_('messages');
   writeRow_('messages', sheet_('messages').getLastRow() + 1, { id: id, requestId: req.id, by: user.name, role: user.role, at: req.updatedAt, kind: 'status', text: text });
+}
+
+/* ------------------------------------------------------------------ */
+/* Files (photos and reports) are stored in a private Drive folder      */
+/* ------------------------------------------------------------------ */
+function folder_(name) {
+  var props = PropertiesService.getScriptProperties(), key = 'HH_FOLDER_' + (name || 'ROOT'), id = props.getProperty(key), f = null;
+  if (id) { try { f = DriveApp.getFolderById(id); } catch (e) { f = null; } }
+  if (!f) {
+    f = name ? folder_('').createFolder(name) : DriveApp.createFolder('Happy Hill Tracker Files');
+    props.setProperty(key, f.getId());
+  }
+  return f;
+}
+function canViewFile_(user, f, mmap) {
+  if (STAFF.indexOf(user.role) >= 0) return true;
+  if (f.kind === 'report') { var m = mmap[f.meetingId]; return !!m && meetingHas_(m, user); }
+  if (user.role === 'college') return f.collegeId === user.collegeId;
+  if (user.role === 'home') return f.status === 'Approved' && f.homeId === user.homeId;
+  return false;
+}
+function fileRow_(id) {
+  var row = findRow_('files', id), t = T.files;
+  return { row: row, f: rowObj_(t, sheet_('files').getRange(row, 1, 1, t.cols.length).getValues()[0]) };
+}
+function safeName_(s) { return String(s || 'file').replace(/[^\w.\- ()]/g, '_').slice(0, 100); }
+
+function upload_(user, req) {
+  var kind = req.kind === 'report' ? 'report' : 'photo', admin = isAdminRole_(user.role);
+  var mime = String(req.mime || ''), name = safeName_(req.name);
+  if ((kind === 'photo' ? PHOTO_MIME : DOC_MIME).indexOf(mime) < 0) throw new Error('This file type is not allowed');
+  var act = null, mtg = null;
+  if (kind === 'photo') {
+    act = readAll_('activities').filter(function (a) { return a.id === req.activityId; })[0];
+    if (!act) throw new Error('Activity not found');
+    if (!(admin || (user.role === 'college' && act.collegeId === user.collegeId))) throw new Error('Not allowed');
+    if (req.consent !== true) throw new Error('Please confirm the photo has consent and shows no identifiable residents');
+  } else {
+    if (!admin) throw new Error('Only Admin can add reports');
+    mtg = readAll_('meetings').filter(function (m) { return m.id === req.meetingId; })[0];
+    if (!mtg) throw new Error('Meeting not found');
+  }
+  var bytes = Utilities.base64Decode(String(req.data || ''));
+  if (!bytes.length) throw new Error('The file is empty');
+  if (bytes.length > FILE_MAX) throw new Error('The file is too large (limit 5 MB)');
+  var folder = folder_(kind === 'photo' ? 'Photos' : 'Reports');
+  var file = folder.createFile(Utilities.newBlob(bytes, mime, name));
+  var thumbId = '';
+  if (kind === 'photo' && req.thumb) {
+    var tb = Utilities.base64Decode(String(req.thumb));
+    if (tb.length && tb.length < 400 * 1024) thumbId = folder.createFile(Utilities.newBlob(tb, 'image/jpeg', 'thumb_' + name)).getId();
+  }
+  var row = {
+    id: nextId_('files'), kind: kind, activityId: act ? act.id : '', meetingId: mtg ? mtg.id : '', collegeId: act ? act.collegeId : '', homeId: act ? act.homeId : '',
+    name: name, mime: mime, size: bytes.length, driveId: file.getId(), thumbId: thumbId, caption: String(req.caption || '').slice(0, 200), consent: kind === 'photo',
+    status: kind === 'report' || admin ? 'Approved' : 'Pending', uploadedBy: user.name, uploadedAt: new Date().toISOString(), approvedBy: kind === 'report' || admin ? user.name : ''
+  };
+  writeRow_('files', sheet_('files').getLastRow() + 1, row);
+  addLog_(user, 'Uploaded ' + kind, row.id + ' ' + name);
+  var pub = {}; Object.keys(row).forEach(function (k) { if (k !== 'driveId' && k !== 'thumbId') pub[k] = row[k]; });
+  return { ok: true, file: pub };
+}
+
+function fileData_(user, req) {
+  var r = fileRow_(req.id), f = r.f;
+  var mmap = {}; if (f.kind === 'report') readAll_('meetings').forEach(function (m) { mmap[m.id] = m; });
+  if (f.status === 'Deleted' || !canViewFile_(user, f, mmap)) throw new Error('Not allowed');
+  var id = req.thumb && f.thumbId ? f.thumbId : f.driveId;
+  var blob = DriveApp.getFileById(id).getBlob();
+  return { ok: true, name: f.name, mime: blob.getContentType(), data: Utilities.base64Encode(blob.getBytes()) };
+}
+
+function trashFile_(f) {
+  [f.driveId, f.thumbId].forEach(function (id) { if (id) { try { DriveApp.getFileById(id).setTrashed(true); } catch (e) { } } });
+}
+
+function fileStatus_(user, req) {
+  if (!isAdminRole_(user.role)) throw new Error('Only Admin can approve photos');
+  var r = fileRow_(req.id), f = r.f, to = req.status === 'Approved' ? 'Approved' : req.status === 'Rejected' ? 'Rejected' : '';
+  if (!to) throw new Error('Choose approve or reject');
+  f.status = to; f.approvedBy = user.name;
+  if (to === 'Rejected') trashFile_(f);
+  writeRow_('files', r.row, f);
+  addLog_(user, to + ' photo', f.id + ' ' + f.name);
+  if (to === 'Approved' && f.kind === 'photo') addUpdate_(user, 'gallery', 'New photo in the Gallery', f.collegeId, f.homeId);
+  return { ok: true };
+}
+
+function fileDelete_(user, req) {
+  var r = fileRow_(req.id), f = r.f;
+  var own = f.uploadedBy === user.name && f.status === 'Pending';
+  if (!isAdminRole_(user.role) && !own) throw new Error('Not allowed');
+  trashFile_(f); f.status = 'Deleted';
+  writeRow_('files', r.row, f);
+  addLog_(user, 'Deleted file', f.id + ' ' + f.name);
+  return { ok: true };
 }
 
 /* ------------------------------------------------------------------ */

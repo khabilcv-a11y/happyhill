@@ -57,12 +57,15 @@
 
   const mous = colleges.map((c, i) => ({
     id: 'M' + (i + 1), collegeId: c.id, homeId: c.homeId,
-    start: off(-300 + i * 20), end: off([30, 420, 200, -10, 55][i]), renewal: ['Renewal requested', '', '', 'Lapsed - to be renewed', 'Under review'][i]
+    start: off(-300 + i * 20), end: off([30, 420, 200, -10, 55][i]), renewal: ['Renewal requested', '', '', 'Lapsed - to be renewed', 'Under review'][i], history: []
   }));
-  const reviews = [
-    { id: 'R1', collegeId: 'C1', date: off(-30), quarter: 'Q-1', minutes: 'Reviewed activity plan; agreed on four activities per month.', actions: 'Submit evidence links within 3 days of each activity.' },
-    { id: 'R2', collegeId: 'C2', date: off(12), quarter: 'Q-1', minutes: '', actions: '' },
-    { id: 'R3', collegeId: 'C4', date: off(25), quarter: 'Q-1', minutes: '', actions: '' }
+  const meetings = [
+    { id: 'E1', title: 'Quarterly review', type: 'Quarterly review', date: off(-30), time: '15:00', venue: 'Nammude Kozhikode Mission Room', agenda: 'Progress of the first quarter', collegeIds: 'C1,C2', homeIds: 'H1,H2', status: 'Held', minutes: 'Reviewed the activity plan; agreed on four activities per month.', actions: 'Submit evidence within 3 days of each activity.', seriesId: '', createdBy: 'DCIP Intern', createdAt: new Date(Date.now() - 40 * 864e5).toISOString() },
+    { id: 'E2', title: 'Monthly assessment', type: 'Monthly assessment', date: off(9), time: '15:00', venue: 'Nammude Kozhikode Mission Room', agenda: 'Monthly progress and pending requests', collegeIds: 'C1,C2,C3,C4,C5', homeIds: 'H1,H2,H3,H4,H5', status: 'Scheduled', minutes: '', actions: '', seriesId: '', createdBy: 'DCIP Intern', createdAt: new Date().toISOString() }
+  ];
+  const updates = [
+    { id: 'P1', at: new Date(Date.now() - 36e5 * 6).toISOString(), type: 'meeting', text: 'Meeting scheduled: Monthly assessment on ' + off(9).split('-').reverse().join('/'), collegeIds: 'C1,C2,C3,C4,C5', homeIds: 'H1,H2,H3,H4,H5', actor: 'DCIP Intern' },
+    { id: 'P2', at: new Date(Date.now() - 36e5 * 28).toISOString(), type: 'mou', text: 'MoU renewed: Partner College 2, valid until ' + off(420).split('-').reverse().join('/'), collegeIds: 'C2', homeIds: 'H2', actor: 'DCIP Intern' }
   ];
   const resources = [
     { id: 'D1', title: 'Activity report template', kind: 'Template', url: '#' },
@@ -96,5 +99,5 @@
     { t: new Date(Date.now() - 36e5 * 3).toISOString(), user: 'Coordinator 1', role: 'college', action: 'Submitted activity', detail: 'A4 Cultural evening' }
   ];
 
-  window.SEED = { colleges, homes, activities, followups, mous, reviews, resources, requests, messages, users, logs, settings: { monthlyTarget: 4, updateDeadlineDays: 3 } };
+  window.SEED = { colleges, homes, activities, followups, mous, meetings, files: [], updates, resources, requests, messages, users, logs, settings: { monthlyTarget: 4, updateDeadlineDays: 3 } };
 })();
